@@ -1,9 +1,31 @@
 from .core import (
     Activation,
-    ReLU
+    CELU,
+    ELU,
+    GELU,
+    GLU,
+    LeakyReLU,
+    ReLU,
+    ReLU6,
+    SELU,
+    Sigmoid,
+    SiLU,
+    Swish,
+    Tanh,
 )
 
 __all__ = [
     "Activation",
-    "ReLU"
+    "CELU",
+    "ELU",
+    "GELU",
+    "GLU",
+    "LeakyReLU",
+    "ReLU",
+    "ReLU6",
+    "SELU",
+    "Sigmoid",
+    "SiLU",
+    "Swish",
+    "Tanh",
 ]
