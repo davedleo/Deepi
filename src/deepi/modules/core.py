@@ -32,9 +32,6 @@ class Module(ABC):
     def __repr__(self) -> str:
         return self.__str__()
 
-    def __call__(self, *x: np.ndarray) -> np.ndarray:
-        return self.forward(*x)
-
     @property
     def type(self):
         return self._type
