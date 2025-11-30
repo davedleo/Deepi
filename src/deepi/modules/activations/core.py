@@ -18,15 +18,14 @@ class ReLU(Activation):
 
     def __init__(self):
         super().__init__("relu")
-        self.dx = 0
 
     def forward(self, x: np.ndarray) -> np.ndarray:
         if self._is_training:
-            self.dx = (x > 0.0).astype(float)
-            y = x * self.dx 
-        else: 
+            self.dx = x > 0.0
+            y = np.where(self.dx, x, 0.0)
+        else:
             y = np.maximum(x, 0.0)
         return y
 
     def backward(self, dy: np.ndarray) -> np.ndarray:
-        return dy * self.dx
+        return np.where(self.dx, dy, 0.0) 
