@@ -12,6 +12,9 @@ class Activation(Module):
     ):
         super().__init__(f"activation.{_type}", False)
 
+    def backward(self, dy: np.ndarray) -> np.ndarray:
+        return self.dx * dy
+
 
 class CELU(Activation):
 
@@ -23,30 +26,24 @@ class CELU(Activation):
         y = np.where(x > 0.0, x, self.alpha * np.expm1(x / self.alpha))
         if self._is_training:
             self.dx = np.where(x > 0.0, 1.0, np.exp(x / self.alpha))
-        
+
         return y
 
-    def backward(self, dy: np.ndarray) -> np.ndarray:
-        return dy * self.dx
 
+class ELU(Activation):
 
-class ELU(Activation): 
-
-    def __init__(self, alpha: float = 1.0): 
+    def __init__(self, alpha: float = 1.0):
         super().__init__("elu")
         self.alpha = alpha
 
-    def forward(self, x: np.ndarray) -> np.ndarray: 
-        y = np.where(x > 0.0, x, self.alpha * np.expm1(x))  
-        
+    def forward(self, x: np.ndarray) -> np.ndarray:
+        y = np.where(x > 0.0, x, self.alpha * np.expm1(x))
+
         if self._is_training:
             self.dx = np.where(x > 0.0, 1.0, self.alpha * np.exp(x))
-        
+
         return y
 
-    def backward(self, dy: np.ndarray) -> np.ndarray: 
-        return dy * self.dx
-    
 
 class GLU(Activation):
 
@@ -58,18 +55,14 @@ class GLU(Activation):
         a, b = np.split(x, 2, axis=self.axis)
         sigmoid_b = 1.0 / (1.0 + np.exp(-b))
         y = a * sigmoid_b
-        
+
         if self._is_training:
-            self.dx_a = sigmoid_b
-            self.dx_b = a * sigmoid_b * (1.0 - sigmoid_b)
-        
+            dx_a = sigmoid_b
+            dx_b = a * sigmoid_b * (1.0 - sigmoid_b)
+            self.dx = np.concatenate([dx_a, dx_b], axis=self.axis)
+
         return y
 
-    def backward(self, dy: np.ndarray) -> np.ndarray:
-        dx_a = dy * self.dx_a
-        dx_b = dy * self.dx_b
-        return np.concatenate([dx_a, dx_b], axis=self.axis)
-    
 
 class GELU(Activation):
 
@@ -84,111 +77,93 @@ class GELU(Activation):
             inner = np.sqrt(2 / np.pi) * (x + 0.044715 * x3)
             tanh_inner = np.tanh(inner)
             y = 0.5 * x * (1.0 + tanh_inner)
-            
+
             if self._is_training:
                 sech2 = 1 - tanh_inner ** 2
-                self.dx = 0.5 * (1.0 + tanh_inner + x * sech2 * np.sqrt(2.0 / np.pi) * (1.0 + 3.0 * 0.044715 * x**2))
+                self.dx = 0.5 * (1.0 + tanh_inner + x * sech2 * np.sqrt(2.0 / np.pi) * (1.0 + 3.0 * 0.044715 * x ** 2))
         else:
             y = 0.5 * x * (1 + erf(x / np.sqrt(2)))
             if self._is_training:
-                self.dx = 0.5 * (1.0 + erf(x / np.sqrt(2))) + (x / np.sqrt(2.0 * np.pi)) * np.exp(-0.5 * x**2)
+                self.dx = 0.5 * (1.0 + erf(x / np.sqrt(2))) + (x / np.sqrt(2.0 * np.pi)) * np.exp(-0.5 * x ** 2)
 
         return y
 
-    def backward(self, dy: np.ndarray) -> np.ndarray:
-        return dy * self.dx
 
+class LeakyReLU(Activation):
 
-class LeakyReLU(Activation): 
-
-    def __init__(self, alpha: float = 0.01): 
+    def __init__(self, alpha: float = 0.01):
         super().__init__("leaky_relu")
-        self.alpha = alpha 
+        self.alpha = alpha
 
-    def forward(self, x: np.ndarray) -> np.ndarray: 
+    def forward(self, x: np.ndarray) -> np.ndarray:
         y = np.where(x > 0.0, x, self.alpha * x)
 
         if self._is_training:
             self.dx = np.where(x > 0.0, 1.0, self.alpha)
 
         return y
-    
-    def backward(self, dy: np.ndarray) -> np.ndarray: 
-        return dy * self.dx
 
 
-class ReLU(Activation): 
+class ReLU(Activation):
 
-    def __init__(self): 
+    def __init__(self):
         super().__init__("relu")
 
-    def forward(self, x: np.ndarray) -> np.ndarray: 
+    def forward(self, x: np.ndarray) -> np.ndarray:
         y = np.maximum(x, 0.0)
 
-        if self._is_training: 
-            self.dx = (x > 0.0).astype(float) 
-        
+        if self._is_training:
+            self.dx = (x > 0.0).astype(float)
+
         return y
 
-    def backward(self, dy: np.ndarray) -> np.ndarray: 
-        return dy * self.dx
-    
 
-class ReLU6(Activation): 
+class ReLU6(Activation):
 
-    def __init__(self): 
+    def __init__(self):
         super().__init__("relu6")
 
-    def forward(self, x: np.ndarray) -> np.ndarray: 
+    def forward(self, x: np.ndarray) -> np.ndarray:
         y = np.clip(x, 0.0, 6.0)
 
         if self._is_training:
             self.dx = ((x > 0.0) & (x < 6.0)).astype(float)
 
-        return y 
-    
-    def backward(self, dy: np.ndarray) -> np.ndarray: 
-        return dy * self.dx
-    
+        return y
 
-class SELU(Activation): 
 
-    def __init__(self): 
+class SELU(Activation):
+
+    def __init__(self):
         super().__init__("selu")
         self.scale = 1.0507009873554804934193349852946
-        self.alpha = 1.6732632423543772848170429916717 
+        self.alpha = 1.6732632423543772848170429916717
 
-    def forward(self, x: np.ndarray) -> np.ndarray: 
+    def forward(self, x: np.ndarray) -> np.ndarray:
         y = np.where(x > 0.0, self.scale * x, self.scale * self.alpha * np.expm1(x))
-        
+
         if self._is_training:
             self.dx = np.where(x > 0.0, self.scale, self.scale * self.alpha * np.exp(x))
-        
+
         return y
-    
-    def backward(self, dy: np.ndarray) -> np.ndarray: 
-        return dy * self.dx
-    
 
-class Sigmoid(Activation): 
 
-    def __init__(self): 
+class Sigmoid(Activation):
+
+    def __init__(self):
         super().__init__("sigmoid")
 
-    def forward(self, x: np.ndarray) -> np.ndarray: 
+    def forward(self, x: np.ndarray) -> np.ndarray:
         y = np.empty_like(x)
         mask = x >= 0
         y[mask] = 1.0 / (1.0 + np.exp(-x[mask]))
         y[~mask] = np.exp(x[~mask]) / (1.0 + np.exp(x[~mask]))
-        
+
         if self._is_training:
             self.dx = y * (1.0 - y)
-        
+
         return y
 
-    def backward(self, dy: np.ndarray) -> np.ndarray: 
-        return dy * self.dx
-    
 
 class SiLU(Activation):
 
@@ -201,14 +176,11 @@ class SiLU(Activation):
         sigmoid_x[mask] = 1.0 / (1.0 + np.exp(-x[mask]))
         sigmoid_x[~mask] = np.exp(x[~mask]) / (1.0 + np.exp(x[~mask]))
         y = x * sigmoid_x
-        
+
         if self._is_training:
             self.dx = sigmoid_x * (1.0 + x * (1.0 - sigmoid_x))
-        
-        return y
 
-    def backward(self, dy: np.ndarray) -> np.ndarray:
-        return dy * self.dx
+        return y
 
 
 class Swish(Activation):
@@ -224,28 +196,22 @@ class Swish(Activation):
         sigmoid_z[mask] = 1.0 / (1.0 + np.exp(-z[mask]))
         sigmoid_z[~mask] = np.exp(z[~mask]) / (1.0 + np.exp(z[~mask]))
         y = x * sigmoid_z
-        
+
         if self._is_training:
             self.dx = sigmoid_z + self.beta * x * sigmoid_z * (1.0 - sigmoid_z)
-        
+
         return y
 
-    def backward(self, dy: np.ndarray) -> np.ndarray:
-        return dy * self.dx
 
+class Tanh(Activation):
 
-class Tanh(Activation): 
-
-    def __init__(self): 
+    def __init__(self):
         super().__init__("tanh")
 
-    def forward(self, x: np.ndarray) -> np.ndarray: 
+    def forward(self, x: np.ndarray) -> np.ndarray:
         y = np.tanh(x)
 
-        if self._is_training: 
-            self.dx = (1.0 - y**2)
+        if self._is_training:
+            self.dx = 1.0 - y ** 2
 
         return y
-    
-    def backward(self, dy: np.ndarray) -> np.ndarray: 
-        return dy * self.dx
