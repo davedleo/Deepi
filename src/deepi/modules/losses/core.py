@@ -177,31 +177,48 @@ class CrossEntropy(Loss):
             self.weight_arr = np.ones(max_class + 1, dtype=float)
             for c, w in weights.items():
                 self.weight_arr[c] = w
-                
         else:
             self.weight_arr = None
 
     def forward(self, y: np.ndarray, y_hat: np.ndarray) -> np.ndarray:
+        if self.weight_arr is not None:
+            indices = y
+            weights = self.weight_arr[indices][:, np.newaxis]
+        else:
+            weights = None
 
         if self.from_logits:
-            y_hat = y_hat - y_hat.max(axis=1, keepdims=True)
-            exp_scores = np.exp(y_hat)
-            y_hat = exp_scores / exp_scores.sum(axis=1, keepdims=True)
+            logits = y_hat - y_hat.max(axis=1, keepdims=True)
+            exp_scores = np.exp(logits)
+            probs = exp_scores / exp_scores.sum(axis=1, keepdims=True)
+            probs = np.clip(probs, self.eps, 1.0)
 
-        y_hat = np.clip(y_hat, self.eps, 1.0)
+            if weights is not None:
+                weighted_probs = probs * weights
+            else:
+                weighted_probs = probs
 
-        if self.weight_arr is not None:
-            indices = y.argmax(axis=1)
-            weights = self.weight_arr[indices][:, np.newaxis]
-            weighted_y = y * weights
-        else:
-            weighted_y = y
+            loss = -np.log(probs[np.arange(y.shape[0]), y]) * (weights.squeeze() if weights is not None else 1.0)
+            mean_loss = loss.mean()
 
-        loss = -(weighted_y * np.log(y_hat)).sum(axis=1)
+            if self._is_training:
+                dx = probs
+                dx[np.arange(y.shape[0]), y] -= 1.0
+                if weights is not None:
+                    dx *= weights
+                self.dx = dx / y.shape[0]
+
+            return mean_loss
+
+        probs = np.clip(y_hat, self.eps, 1.0)
+        loss = -np.log(probs[np.arange(y.shape[0]), y]) * (weights.squeeze() if weights is not None else 1.0)
         mean_loss = loss.mean()
 
         if self._is_training:
-            dx = -weighted_y / y_hat
+            dx = np.zeros_like(probs)
+            dx[np.arange(y.shape[0]), y] = -1.0 / probs[np.arange(y.shape[0]), y]
+            if weights is not None:
+                dx *= weights
             self.dx = dx / y.shape[0]
 
         return mean_loss
@@ -211,12 +228,10 @@ class CategoricalCrossEntropy(Loss):
 
     def __init__(
         self,
-        from_logits: bool = False,
         weights: Optional[Dict[int, float]] = None,
         eps: float = 1e-12,
     ):
         super().__init__("categorical_cross_entropy")
-        self.from_logits = from_logits
         self.eps = eps
         if weights is not None:
             max_class = max(weights.keys())
@@ -227,30 +242,24 @@ class CategoricalCrossEntropy(Loss):
             self.weight_arr = None
 
     def forward(self, y: np.ndarray, y_hat: np.ndarray) -> np.ndarray:
-        if self.from_logits:
-            y_hat = y_hat - y_hat.max(axis=1, keepdims=True)
-            exp_scores = np.exp(y_hat)
-            y_hat = exp_scores / exp_scores.sum(axis=1, keepdims=True)
-
-        y_hat = np.clip(y_hat, self.eps, 1.0)
-        indices = y.argmax(axis=1)
-        probs = y_hat[np.arange(y.shape[0]), indices]
-
         if self.weight_arr is not None:
-            weights = self.weight_arr[indices]
-            weighted_losses = -weights * np.log(probs)
+            weights = self.weight_arr[y][:, np.newaxis]
         else:
-            weighted_losses = -np.log(probs)
+            weights = None
 
-        mean_loss = weighted_losses.mean()
+        logits = y_hat - y_hat.max(axis=1, keepdims=True)
+        exp_scores = np.exp(logits)
+        probs = exp_scores / exp_scores.sum(axis=1, keepdims=True)
+        probs = np.clip(probs, self.eps, 1.0)
+
+        loss = -np.log(probs[np.arange(y.shape[0]), y]) * (weights.squeeze() if weights is not None else 1.0)
+        mean_loss = loss.mean()
 
         if self._is_training:
-            dx = np.zeros_like(y_hat)
-            if self.weight_arr is not None:
-                weights = self.weight_arr[indices]
-                dx[np.arange(y.shape[0]), indices] = -weights / probs
-            else:
-                dx[np.arange(y.shape[0]), indices] = -1.0 / probs
+            dx = probs
+            dx[np.arange(y.shape[0]), y] -= 1.0
+            if weights is not None:
+                dx *= weights
             self.dx = dx / y.shape[0]
 
         return mean_loss
