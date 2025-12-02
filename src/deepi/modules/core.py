@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import Dict, List, Optional
+from typing import Dict, List
 
 import numpy as np
 
@@ -16,7 +16,7 @@ class Module(ABC):
         self.next: List["Module"] = []
         self.prev: List["Module"] = []
 
-        self.dx: Optional[np.ndarray] = None
+        self.dx: np.ndarray = 0.0
         self._is_training: bool = False
 
         self._has_params = _has_params
@@ -31,9 +31,6 @@ class Module(ABC):
 
     def __repr__(self) -> str:
         return self.__str__()
-
-    def __call__(self, *x: np.ndarray) -> np.ndarray:
-        return self.forward(*x)
 
     @property
     def type(self):
@@ -64,6 +61,6 @@ class Module(ABC):
         self._is_training = False
 
     def clear(self) -> None:
-        self.dx = None
+        self.dx = 0.0
         if self._has_params:
             self.grads = dict()
