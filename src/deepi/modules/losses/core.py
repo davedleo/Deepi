@@ -18,7 +18,7 @@ class Loss(Module):
         raise NotImplementedError()
 
     def backward(self) -> np.ndarray:
-        raise self.dx.copy()
+        raise self.dx  
 
 
 class ElasticNet(Loss):
