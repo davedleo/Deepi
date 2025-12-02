@@ -43,26 +43,7 @@ class ELU(Activation):
             self.dx = np.where(x > 0.0, 1.0, self.alpha * np.exp(x))
 
         return y
-
-
-class GLU(Activation):
-
-    def __init__(self, axis: int = -1):
-        super().__init__("glu")
-        self.axis = axis
-
-    def forward(self, x: np.ndarray) -> np.ndarray:
-        a, b = np.split(x, 2, axis=self.axis)
-        sigmoid_b = 1.0 / (1.0 + np.exp(-b))
-        y = a * sigmoid_b
-
-        if self._is_training:
-            dx_a = sigmoid_b
-            dx_b = a * sigmoid_b * (1.0 - sigmoid_b)
-            self.dx = np.concatenate([dx_a, dx_b], axis=self.axis)
-
-        return y
-
+    
 
 class GELU(Activation):
 
@@ -85,6 +66,25 @@ class GELU(Activation):
             y = 0.5 * x * (1 + erf(x / np.sqrt(2)))
             if self._is_training:
                 self.dx = 0.5 * (1.0 + erf(x / np.sqrt(2))) + (x / np.sqrt(2.0 * np.pi)) * np.exp(-0.5 * x ** 2)
+
+        return y
+
+
+class GLU(Activation):
+
+    def __init__(self, axis: int = -1):
+        super().__init__("glu")
+        self.axis = axis
+
+    def forward(self, x: np.ndarray) -> np.ndarray:
+        a, b = np.split(x, 2, axis=self.axis)
+        sigmoid_b = 1.0 / (1.0 + np.exp(-b))
+        y = a * sigmoid_b
+
+        if self._is_training:
+            dx_a = sigmoid_b
+            dx_b = a * sigmoid_b * (1.0 - sigmoid_b)
+            self.dx = np.concatenate([dx_a, dx_b], axis=self.axis)
 
         return y
 
