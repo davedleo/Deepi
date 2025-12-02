@@ -16,9 +16,8 @@ class Loss(Module):
     def forward(self, y: np.ndarray, y_hat: np.ndarray) -> float: 
         raise NotImplementedError()
     
-    @abstractmethod 
     def backward(self) -> np.ndarray: 
-        raise NotImplementedError
+        raise self.dx.copy()
 
 
 class MAE(Loss): 
@@ -34,5 +33,16 @@ class MAE(Loss):
         
         return np.abs(diff).mean()
 
-    def backward(self) -> np.ndarray: 
-        return self.dx
+
+class MSE(Loss):
+
+    def __init__(self):
+        super().__init__("mse")
+
+    def forward(self, y: np.ndarray, y_hat: np.ndarray) -> float:
+        diff = y_hat - y
+
+        if self._is_training:
+            self.dx = 2.0 * diff / diff.size
+
+        return np.mean(diff ** 2)
