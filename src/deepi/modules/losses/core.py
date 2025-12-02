@@ -13,7 +13,7 @@ class Loss(Module):
         super().__init__(f"loss.{_type}", False)
 
     @abstractmethod
-    def forward(self, y: np.ndarray, y_hat: np.ndarray) -> float: 
+    def forward(self, y: np.ndarray, y_hat: np.ndarray) -> np.ndarray: 
         raise NotImplementedError()
     
     def backward(self) -> np.ndarray: 
@@ -25,7 +25,7 @@ class MAE(Loss):
     def __init__(self): 
         super().__init__("mae")
 
-    def forward(self, y: np.ndarray, y_hat: np.ndarray) -> float: 
+    def forward(self, y: np.ndarray, y_hat: np.ndarray) -> np.ndarray: 
         diff = y_hat - y
         
         if self._is_training: 
@@ -39,7 +39,7 @@ class MSE(Loss):
     def __init__(self):
         super().__init__("mse")
 
-    def forward(self, y: np.ndarray, y_hat: np.ndarray) -> float:
+    def forward(self, y: np.ndarray, y_hat: np.ndarray) -> np.ndarray:
         diff = y_hat - y
 
         if self._is_training:
