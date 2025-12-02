@@ -2,7 +2,6 @@ import pytest
 import numpy as np
 from deepi.modules.core import Module
 
-# A simple concrete subclass to test abstract methods
 class DummyModule(Module):
     def __init__(self):
         super().__init__(_type="dummy", _has_params=True)
