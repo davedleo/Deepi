@@ -12,6 +12,7 @@ from .core import (
     SiLU,
     Swish,
     Tanh,
+    Softmax
 )
 
 __all__ = [
@@ -28,4 +29,5 @@ __all__ = [
     "SiLU",
     "Swish",
     "Tanh",
+    "Softmax"
 ]

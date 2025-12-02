@@ -215,3 +215,24 @@ class Tanh(Activation):
             self.dx = 1.0 - y ** 2
 
         return y
+
+
+class Softmax(Activation):
+
+    def __init__(self, axis: int = -1):
+        super().__init__("softmax")
+        self.axis = axis
+
+    def forward(self, x: np.ndarray) -> np.ndarray:
+        x_max = np.max(x, axis=self.axis, keepdims=True)
+        exp_x = np.exp(x - x_max)
+        y = exp_x / np.sum(exp_x, axis=self.axis, keepdims=True)
+
+        if self._is_training:
+            self.dx = y
+
+        return y
+
+    def backward(self, dy: np.ndarray) -> np.ndarray:
+        dot = np.sum(self.dx * dy, axis=self.axis, keepdims=True)
+        return self.dx * (dy - dot)

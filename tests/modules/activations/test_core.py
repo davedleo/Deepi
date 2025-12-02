@@ -14,6 +14,7 @@ from deepi.modules.activations import (
     SiLU,
     Swish,
     Tanh,
+    Softmax
 )
 
 
@@ -499,3 +500,45 @@ def test_tanh(x, dy):
     dx_new = activation.backward(dy)
     assert isinstance(dx_new, np.ndarray)
     assert np.allclose(dx_new, dy * dx_expected)
+
+
+# Softmax
+def test_softmax(x, dy):
+    # Test Softmax activation along the last axis
+    activation = Softmax(axis=1)
+
+    # Initialization
+    assert activation.type == "module.activation.softmax"
+    assert not activation._is_training
+    assert activation.dx == 0.0
+
+    # No training
+    out = activation.forward(x)
+    exp_x = np.exp(x - np.max(x, axis=1, keepdims=True))
+    expected = exp_x / np.sum(exp_x, axis=1, keepdims=True)
+    assert isinstance(out, np.ndarray)
+    assert out.shape == x.shape
+    assert np.allclose(out, expected)
+    assert not activation._is_training
+    assert activation.dx == 0.0
+
+    # Training
+    activation.train()
+    out_train = activation.forward(x)
+    assert isinstance(out_train, np.ndarray)
+    assert out_train.shape == x.shape
+    assert activation._is_training
+    dx_expected = expected
+    assert np.allclose(activation.dx, dx_expected)
+
+    # Backward
+    dx_new = activation.backward(dy)
+    assert isinstance(dx_new, np.ndarray)
+    # Manually compute full softmax Jacobian for verification
+    batch_size, _ = x.shape
+    expected_dx = np.zeros_like(x)
+    for b in range(batch_size):
+        s = expected[b].reshape(-1, 1)  # column vector
+        J = np.diagflat(s) - s @ s.T    # full Jacobian
+        expected_dx[b] = J @ dy[b]
+    assert np.allclose(dx_new, expected_dx)
