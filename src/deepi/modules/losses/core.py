@@ -1,6 +1,6 @@
 from abc import abstractmethod
 import numpy as np
-from typing import Optional, Dict
+from typing import Dict, Optional
 
 from deepi.modules import Module
 
@@ -19,6 +19,49 @@ class Loss(Module):
 
     def backward(self) -> np.ndarray:
         raise self.dx  
+    
+
+class CrossEntropy(Loss): 
+
+    def __init__(self, weights: Optional[Dict[int, float]] = None): 
+        super().__init__("cross_entropy")
+        self._has_weights = weights is not None
+
+        if self._has_weights:
+            labels_list, weights_list = [], []
+            for label, weight in weights.items(): 
+                labels_list.append(int(label))
+                weights_list.append(float(weight))
+
+            self.labels = np.array(labels_list, dtype=int)
+            self.weights = np.array(weights, dtype=float)
+            self.weights = self.weights / self.weights.sum()
+
+    def forward(self, y: np.ndarray, y_hat: np.ndarray) -> np.ndarray:
+        shifted = y_hat - np.max(y_hat, axis=1, keepdims=True)
+        exp_scores = np.exp(shifted)
+        probs = exp_scores / np.sum(exp_scores, axis=1, keepdims=True)
+
+        if not self._has_weights:
+            n = y.size
+            loss = -np.log(probs[np.arange(n), y]).mean()
+
+            if self._is_training:
+                probs[np.arange(n), y] -= 1.0
+                self.dx = probs / n
+
+            return loss
+
+        n = y.size
+        sample_weights = self.weights[y]
+        loss = -(sample_weights * np.log(probs[np.arange(n), y])).mean()
+
+        if self._is_training:
+            probs[np.arange(n), y] -= 1.0
+            probs *= sample_weights[:, None]
+            self.dx = probs / n
+
+        return loss
 
 
 class ElasticNet(Loss):
@@ -87,6 +130,33 @@ class MAE(Loss):
             self.dx = np.sign(diff, dtype=float) / diff.size
 
         return np.abs(diff).mean()
+    
+
+class ModifiedUber(Loss):
+
+    def __init__(self, delta: float = 1.0, alpha: float = 1.5):
+        super().__init__("modified_uber")
+        self.delta = delta
+        self.alpha = alpha
+
+    def forward(self, y: np.ndarray, y_hat: np.ndarray) -> np.ndarray:
+        diff = y_hat - y
+        abs_diff = np.abs(diff)
+        mask = abs_diff <= self.delta
+        loss = np.where(
+            mask,
+            0.5 * diff ** 2,
+            self.alpha * self.delta * (abs_diff - 0.5 * self.delta),
+        )
+
+        if self._is_training:
+            self.dx = np.where(
+                mask,
+                diff / y.size,
+                self.alpha * self.delta * np.sign(diff) / y.size,
+            )
+
+        return loss.mean()
 
 
 class MSE(Loss):
@@ -134,132 +204,3 @@ class PoissonNL(Loss):
         return (clipped - y * np.log(clipped)).mean()
 
 
-class ModifiedUber(Loss):
-
-    def __init__(self, delta: float = 1.0, alpha: float = 1.5):
-        super().__init__("modified_uber")
-        self.delta = delta
-        self.alpha = alpha
-
-    def forward(self, y: np.ndarray, y_hat: np.ndarray) -> np.ndarray:
-        diff = y_hat - y
-        abs_diff = np.abs(diff)
-        mask = abs_diff <= self.delta
-        loss = np.where(
-            mask,
-            0.5 * diff ** 2,
-            self.alpha * self.delta * (abs_diff - 0.5 * self.delta),
-        )
-
-        if self._is_training:
-            self.dx = np.where(
-                mask,
-                diff / y.size,
-                self.alpha * self.delta * np.sign(diff) / y.size,
-            )
-
-        return loss.mean()
-
-
-class CrossEntropy(Loss):
-
-    def __init__(
-        self,
-        from_logits: bool = False,
-        weights: Optional[Dict[int, float]] = None,
-        eps: float = 1e-12,
-    ):
-        super().__init__("cross_entropy")
-        self.from_logits = from_logits
-        self.eps = eps
-        if weights is not None:
-            max_class = max(weights.keys())
-            self.weight_arr = np.ones(max_class + 1, dtype=float)
-            for c, w in weights.items():
-                self.weight_arr[c] = w
-        else:
-            self.weight_arr = None
-
-    def forward(self, y: np.ndarray, y_hat: np.ndarray) -> np.ndarray:
-        if self.weight_arr is not None:
-            indices = y
-            weights = self.weight_arr[indices][:, np.newaxis]
-        else:
-            weights = None
-
-        if self.from_logits:
-            logits = y_hat - y_hat.max(axis=1, keepdims=True)
-            exp_scores = np.exp(logits)
-            probs = exp_scores / exp_scores.sum(axis=1, keepdims=True)
-            probs = np.clip(probs, self.eps, 1.0)
-
-            if weights is not None:
-                weighted_probs = probs * weights
-            else:
-                weighted_probs = probs
-
-            loss = -np.log(probs[np.arange(y.shape[0]), y]) * (weights.squeeze() if weights is not None else 1.0)
-            mean_loss = loss.mean()
-
-            if self._is_training:
-                dx = probs
-                dx[np.arange(y.shape[0]), y] -= 1.0
-                if weights is not None:
-                    dx *= weights
-                self.dx = dx / y.shape[0]
-
-            return mean_loss
-
-        probs = np.clip(y_hat, self.eps, 1.0)
-        loss = -np.log(probs[np.arange(y.shape[0]), y]) * (weights.squeeze() if weights is not None else 1.0)
-        mean_loss = loss.mean()
-
-        if self._is_training:
-            dx = np.zeros_like(probs)
-            dx[np.arange(y.shape[0]), y] = -1.0 / probs[np.arange(y.shape[0]), y]
-            if weights is not None:
-                dx *= weights
-            self.dx = dx / y.shape[0]
-
-        return mean_loss
-
-
-class CategoricalCrossEntropy(Loss):
-
-    def __init__(
-        self,
-        weights: Optional[Dict[int, float]] = None,
-        eps: float = 1e-12,
-    ):
-        super().__init__("categorical_cross_entropy")
-        self.eps = eps
-        if weights is not None:
-            max_class = max(weights.keys())
-            self.weight_arr = np.ones(max_class + 1, dtype=float)
-            for c, w in weights.items():
-                self.weight_arr[c] = w
-        else:
-            self.weight_arr = None
-
-    def forward(self, y: np.ndarray, y_hat: np.ndarray) -> np.ndarray:
-        if self.weight_arr is not None:
-            weights = self.weight_arr[y][:, np.newaxis]
-        else:
-            weights = None
-
-        logits = y_hat - y_hat.max(axis=1, keepdims=True)
-        exp_scores = np.exp(logits)
-        probs = exp_scores / exp_scores.sum(axis=1, keepdims=True)
-        probs = np.clip(probs, self.eps, 1.0)
-
-        loss = -np.log(probs[np.arange(y.shape[0]), y]) * (weights.squeeze() if weights is not None else 1.0)
-        mean_loss = loss.mean()
-
-        if self._is_training:
-            dx = probs
-            dx[np.arange(y.shape[0]), y] -= 1.0
-            if weights is not None:
-                dx *= weights
-            self.dx = dx / y.shape[0]
-
-        return mean_loss
