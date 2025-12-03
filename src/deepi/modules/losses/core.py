@@ -34,7 +34,7 @@ class CrossEntropy(Loss):
                 weights_list.append(float(weight))
 
             self.labels = np.array(labels_list, dtype=int)
-            self.weights = np.array(weights, dtype=float)
+            self.weights = np.array(weights_list, dtype=float)
             self.weights = self.weights / self.weights.sum()
 
     def forward(self, y: np.ndarray, y_hat: np.ndarray) -> np.ndarray:
@@ -42,8 +42,9 @@ class CrossEntropy(Loss):
         exp_scores = np.exp(shifted)
         probs = exp_scores / np.sum(exp_scores, axis=1, keepdims=True)
 
+        n = len(y)
+
         if not self._has_weights:
-            n = y.size
             loss = -np.log(probs[np.arange(n), y]).mean()
 
             if self._is_training:
@@ -52,7 +53,6 @@ class CrossEntropy(Loss):
 
             return loss
 
-        n = y.size
         sample_weights = self.weights[y]
         loss = -(sample_weights * np.log(probs[np.arange(n), y])).mean()
 
@@ -86,15 +86,15 @@ class ElasticNet(Loss):
         return (self.alpha_l1 * l1_term + self.alpha_l2 * l2_term).mean()
 
 
-class GaussianNL(Loss):
+class GaussianNLL(Loss):
 
     def __init__(self, eps: float = 1e-12):
-        super().__init__("gaussian_nl")
+        super().__init__("gaussian_nll")
         self.eps = eps
 
     def forward(self, y: np.ndarray, y_hat: np.ndarray) -> np.ndarray:
         diff = y - y_hat
-        var = np.var(y_hat) + self.eps
+        var = y_hat.var() + self.eps
 
         if self._is_training:
             self.dx = diff / var / y.size
@@ -105,17 +105,19 @@ class GaussianNL(Loss):
 class KLDiv(Loss):
 
     def __init__(self, eps: float = 1e-12):
-        super().__init__("kld")
+        super().__init__("kldiv")
         self.eps = eps
 
     def forward(self, y: np.ndarray, y_hat: np.ndarray) -> np.ndarray:
         p = np.clip(y, self.eps, 1.0)
         q = np.clip(y_hat, self.eps, 1.0)
 
-        if self._is_training:
-            self.dx = -p / q / y.size
+        n = len(y)
 
-        return (p * np.log(p / q)).sum() / y.size
+        if self._is_training:
+            self.dx = -p / q / n
+
+        return (p * np.log(p / q)).sum() / n
 
 
 class MAE(Loss):
@@ -183,24 +185,26 @@ class NLL(Loss):
         clipped = np.clip(y_hat, self.eps, 1.0)
         log_probs = np.log(clipped)
 
+        n = len(y)
+
         if self._is_training:
-            self.dx = -y / clipped / y.size
+            self.dx = -y / clipped / n
 
-        return -(y * log_probs).sum() / y.size
+        return -(y * log_probs).sum() / n
 
 
-class PoissonNL(Loss):
+class PoissonNLL(Loss):
 
     def __init__(self, eps: float = 1e-12):
-        super().__init__("poisson_nl")
+        super().__init__("poisson_nll")
         self.eps = eps
 
     def forward(self, y: np.ndarray, y_hat: np.ndarray) -> np.ndarray:
         clipped = np.clip(y_hat, self.eps, None)
 
+        n = len(y)
+
         if self._is_training:
-            self.dx = 1 - y / clipped
+            self.dx = (1 - y / clipped) / n
 
         return (clipped - y * np.log(clipped)).mean()
-
-

@@ -3,10 +3,10 @@ from .core import (
     MAE,
     MSE,
     ElasticNet,
-    GaussianNL,
+    GaussianNLL,
     KLDiv,
     NLL,
-    PoissonNL,
+    PoissonNLL,
     ModifiedUber,
     CrossEntropy
 )
@@ -16,10 +16,10 @@ __all__ = [
     "MAE",
     "MSE",
     "ElasticNet",
-    "GaussianNL",
+    "GaussianNLL",
     "KLDiv",
     "NLL",
-    "PoissonNL",
+    "PoissonNLL",
     "ModifiedUber",
     "CrossEntropy",
 ]
