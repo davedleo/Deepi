@@ -542,3 +542,51 @@ def test_softmax(x, dy):
         J = np.diagflat(s) - s @ s.T    # full Jacobian
         expected_dx[b] = J @ dy[b]
     assert np.allclose(dx_new, expected_dx)
+
+
+def test_logsoftmax(x, dy):
+    from deepi.modules.activations import LogSoftmax
+
+    activation = LogSoftmax(axis=1)
+
+    # Initialization
+    assert activation.type == "module.activation.logsoftmax"
+    assert not activation._is_training
+    assert activation.dx == 0.0
+
+    # No training
+    out = activation.forward(x)
+    x_max = np.max(x, axis=1, keepdims=True)
+    shifted = x - x_max
+    logsumexp = np.log(np.sum(np.exp(shifted), axis=1, keepdims=True))
+    expected = shifted - logsumexp
+    assert isinstance(out, np.ndarray)
+    assert np.allclose(out, expected)
+    assert not activation._is_training
+    assert activation.dx == 0.0
+
+    # Training
+    activation.train()
+    out_train = activation.forward(x)
+    assert isinstance(out_train, np.ndarray)
+    assert np.allclose(out_train, expected)
+    assert activation._is_training
+
+    exp_shifted = np.exp(shifted)
+    softmax = exp_shifted / np.sum(exp_shifted, axis=1, keepdims=True)
+    assert np.allclose(activation.dx, softmax)
+
+    # Backward
+    dx_new = activation.backward(dy)
+    assert isinstance(dx_new, np.ndarray)
+
+    # Full Jacobian test
+    batch_size, n = x.shape
+    expected_dx = np.zeros_like(x)
+    for b in range(batch_size):
+        p = softmax[b].reshape(-1, 1)
+        # Jacobian of logsoftmax: J = I - p
+        J = np.eye(n) - p @ np.ones((1, n))
+        expected_dx[b] = J @ dy[b]
+
+    assert np.allclose(dx_new, expected_dx)
