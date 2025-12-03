@@ -45,7 +45,7 @@ class Module(ABC):
         raise NotImplementedError()
 
     @abstractmethod
-    def backward(self, dy: np.ndarray) -> np.ndarray:
+    def backward(self, *dy: np.ndarray) -> np.ndarray:
         raise NotImplementedError()
 
     def link(self, module: "Module") -> None:
