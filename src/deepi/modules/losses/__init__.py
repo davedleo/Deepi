@@ -8,8 +8,7 @@ from .core import (
     NLL,
     PoissonNL,
     ModifiedUber,
-    CrossEntropy,
-    CategoricalCrossEntropy
+    CrossEntropy
 )
 
 __all__ = [
@@ -23,5 +22,4 @@ __all__ = [
     "PoissonNL",
     "ModifiedUber",
     "CrossEntropy",
-    "CategoricalCrossEntropy"
 ]
