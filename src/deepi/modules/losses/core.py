@@ -96,10 +96,12 @@ class GaussianNLL(Loss):
         diff = y - y_hat
         var = y_hat.var() + self.eps
 
-        if self._is_training:
-            self.dx = diff / var / y.size
+        n = len(y)
 
-        return 0.5 * ((diff ** 2) / var + np.log(2 * np.pi * var)).mean()
+        if self._is_training:
+            self.dx = diff / var / n
+
+        return 0.5 * ((diff ** 2) / var + np.log(2 * np.pi * var)).sum() / n
 
 
 class KLDiv(Loss):
@@ -207,4 +209,4 @@ class PoissonNLL(Loss):
         if self._is_training:
             self.dx = (1 - y / clipped) / n
 
-        return (clipped - y * np.log(clipped)).mean()
+        return (clipped - y * np.log(clipped)).sum() / n
