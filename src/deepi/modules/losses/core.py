@@ -18,7 +18,7 @@ class Loss(Module):
         raise NotImplementedError()
 
     def backward(self) -> np.ndarray:
-        raise self.dx  
+        return self.dx  
     
 
 class CrossEntropy(Loss): 
