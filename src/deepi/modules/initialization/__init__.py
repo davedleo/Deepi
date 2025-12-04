@@ -1,7 +1,11 @@
 from .core import (
-    Initializer
+    Initializer,
+    Uniform,
+    Normal
 )
 
 __all__ = [
-    "Initializer"
+    "Initializer",
+    "Uniform",
+    "Normal"
 ]

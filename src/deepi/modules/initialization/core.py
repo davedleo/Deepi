@@ -54,3 +54,18 @@ class Uniform(Initializer):
 
     def initialize(self, shape: Tuple[int, ...]) -> np.ndarray: 
         return np.random.uniform(self.low, self.high, shape)
+    
+
+class Normal(Initializer): 
+
+    def __init__(
+            self,
+            mean: float = 0.0, 
+            std: float = 1.0
+    ): 
+        super().__init__("normal")
+        self.mean = mean 
+        self.std = std
+
+    def initialize(self, shape: Tuple[int, ...]) -> np.ndarray: 
+        return np.random.normal(self.mean, self.std, shape)  
