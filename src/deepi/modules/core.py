@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import Dict, List, Optional, Tuple, Union
+from typing import Callable, Dict, List, Optional, Tuple, Union
 
 import numpy as np
 
@@ -21,8 +21,8 @@ class Module(ABC):
 
         self._has_params = _has_params
         if self._has_params:
-            self.params: Dict[str, np.ndarray] = dict()
-            self.grads: Dict[str, np.ndarray] = dict()
+            self.params: Dict[str, Union[np.ndarray, Tuple[int, ...]]] = dict() 
+            self.grads: Dict[str, Callable] = dict()
 
     def __str__(self) -> str:
         parts = self._type.split('.')
