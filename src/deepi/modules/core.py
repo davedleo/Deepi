@@ -20,9 +20,8 @@ class Module(ABC):
         self._is_training: bool = False
 
         self._has_params = _has_params
-        if self._has_params:
-            self.params: Dict[str, Union[np.ndarray, Tuple[int, ...]]] = dict() 
-            self.grads: Dict[str, Callable] = dict()
+        self.params: Dict[str, Union[np.ndarray, Tuple[int, ...]]] = dict() 
+        self.grads: Dict[str, Callable] = dict()
 
     def __str__(self) -> str:
         parts = self._type.split('.')
@@ -53,6 +52,13 @@ class Module(ABC):
             self.next.append(module)
         if self not in module.prev:
             module.prev.append(self)
+
+    def get_params(self) -> Dict[str, np.ndarray]: 
+        return self.params
+    
+    def load_params(self, params: Dict[str, np.ndarray]): 
+        for k, v in params.items(): 
+            self.params[k] = v
 
     def train(self) -> None:
         self._is_training = True
