@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Tuple, Union
 
 import numpy as np
 
@@ -16,7 +16,7 @@ class Module(ABC):
         self.next: List["Module"] = []
         self.prev: List["Module"] = []
 
-        self.cache: Optional[np.ndarray] = None
+        self.cache: Optional[Union[np.ndarray, Tuple[np.ndarray, ...]]] = None
         self._is_training: bool = False
 
         self._has_params = _has_params
