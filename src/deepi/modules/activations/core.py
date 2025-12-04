@@ -13,7 +13,7 @@ class Activation(Module):
         super().__init__(f"activation.{_type}", False)
 
     def backward(self, dy: np.ndarray) -> np.ndarray:
-        return self.dx * dy
+        return self.cache * dy
 
 
 class CELU(Activation):
@@ -25,7 +25,7 @@ class CELU(Activation):
     def forward(self, x: np.ndarray) -> np.ndarray:
         y = np.where(x > 0.0, x, self.alpha * np.expm1(x / self.alpha))
         if self._is_training:
-            self.dx = np.where(x > 0.0, 1.0, np.exp(x / self.alpha))
+            self.cache = np.where(x > 0.0, 1.0, np.exp(x / self.alpha))
 
         return y
 
@@ -40,7 +40,7 @@ class ELU(Activation):
         y = np.where(x > 0.0, x, self.alpha * np.expm1(x))
 
         if self._is_training:
-            self.dx = np.where(x > 0.0, 1.0, self.alpha * np.exp(x))
+            self.cache = np.where(x > 0.0, 1.0, self.alpha * np.exp(x))
 
         return y
     
@@ -61,11 +61,11 @@ class GELU(Activation):
 
             if self._is_training:
                 sech2 = 1 - tanh_inner ** 2
-                self.dx = 0.5 * (1.0 + tanh_inner + x * sech2 * np.sqrt(2.0 / np.pi) * (1.0 + 3.0 * 0.044715 * x ** 2))
+                self.cache = 0.5 * (1.0 + tanh_inner + x * sech2 * np.sqrt(2.0 / np.pi) * (1.0 + 3.0 * 0.044715 * x ** 2))
         else:
             y = 0.5 * x * (1 + erf(x / np.sqrt(2)))
             if self._is_training:
-                self.dx = 0.5 * (1.0 + erf(x / np.sqrt(2))) + (x / np.sqrt(2.0 * np.pi)) * np.exp(-0.5 * x ** 2)
+                self.cache = 0.5 * (1.0 + erf(x / np.sqrt(2))) + (x / np.sqrt(2.0 * np.pi)) * np.exp(-0.5 * x ** 2)
 
         return y
 
@@ -84,7 +84,7 @@ class GLU(Activation):
         if self._is_training:
             dx_a = sigmoid_b
             dx_b = a * sigmoid_b * (1.0 - sigmoid_b)
-            self.dx = np.concatenate([dx_a, dx_b], axis=self.axis)
+            self.cache = np.concatenate([dx_a, dx_b], axis=self.axis)
 
         return y
 
@@ -99,7 +99,7 @@ class LeakyReLU(Activation):
         y = np.where(x > 0.0, x, self.alpha * x)
 
         if self._is_training:
-            self.dx = np.where(x > 0.0, 1.0, self.alpha)
+            self.cache = np.where(x > 0.0, 1.0, self.alpha)
 
         return y
 
@@ -113,7 +113,7 @@ class ReLU(Activation):
         y = np.maximum(x, 0.0)
 
         if self._is_training:
-            self.dx = (x > 0.0).astype(float)
+            self.cache = (x > 0.0).astype(float)
 
         return y
 
@@ -127,7 +127,7 @@ class ReLU6(Activation):
         y = np.clip(x, 0.0, 6.0)
 
         if self._is_training:
-            self.dx = ((x > 0.0) & (x < 6.0)).astype(float)
+            self.cache = ((x > 0.0) & (x < 6.0)).astype(float)
 
         return y
 
@@ -143,7 +143,7 @@ class SELU(Activation):
         y = np.where(x > 0.0, self.scale * x, self.scale * self.alpha * np.expm1(x))
 
         if self._is_training:
-            self.dx = np.where(x > 0.0, self.scale, self.scale * self.alpha * np.exp(x))
+            self.cache = np.where(x > 0.0, self.scale, self.scale * self.alpha * np.exp(x))
 
         return y
 
@@ -160,7 +160,7 @@ class Sigmoid(Activation):
         y[~mask] = np.exp(x[~mask]) / (1.0 + np.exp(x[~mask]))
 
         if self._is_training:
-            self.dx = y * (1.0 - y)
+            self.cache = y * (1.0 - y)
 
         return y
 
@@ -178,7 +178,7 @@ class SiLU(Activation):
         y = x * sigmoid_x
 
         if self._is_training:
-            self.dx = sigmoid_x * (1.0 + x * (1.0 - sigmoid_x))
+            self.cache = sigmoid_x * (1.0 + x * (1.0 - sigmoid_x))
 
         return y
 
@@ -198,7 +198,7 @@ class Swish(Activation):
         y = x * sigmoid_z
 
         if self._is_training:
-            self.dx = sigmoid_z + self.beta * x * sigmoid_z * (1.0 - sigmoid_z)
+            self.cache = sigmoid_z + self.beta * x * sigmoid_z * (1.0 - sigmoid_z)
 
         return y
 
@@ -212,7 +212,7 @@ class Tanh(Activation):
         y = np.tanh(x)
 
         if self._is_training:
-            self.dx = 1.0 - y ** 2
+            self.cache = 1.0 - y ** 2
 
         return y
 
@@ -229,13 +229,13 @@ class Softmax(Activation):
         y = exp_x / np.sum(exp_x, axis=self.axis, keepdims=True)
 
         if self._is_training:
-            self.dx = y
+            self.cache = y
 
         return y
 
     def backward(self, dy: np.ndarray) -> np.ndarray:
-        dot = np.sum(self.dx * dy, axis=self.axis, keepdims=True)
-        return self.dx * (dy - dot)
+        dot = np.sum(self.cache * dy, axis=self.axis, keepdims=True)
+        return self.cache * (dy - dot)
 
 
 class LogSoftmax(Activation):
@@ -252,10 +252,10 @@ class LogSoftmax(Activation):
 
         if self._is_training:
             exp_shifted = np.exp(shifted)
-            self.dx = exp_shifted / np.sum(exp_shifted, axis=self.axis, keepdims=True)
+            self.cache = exp_shifted / np.sum(exp_shifted, axis=self.axis, keepdims=True)
 
         return y
 
     def backward(self, dy: np.ndarray) -> np.ndarray:
         dot = np.sum(dy, axis=self.axis, keepdims=True)
-        return dy - self.dx * dot
+        return dy - self.cache * dot

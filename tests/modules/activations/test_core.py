@@ -35,11 +35,11 @@ class DummyActivation(Activation):
 
     def forward(self, x: np.ndarray) -> np.ndarray:
         if self._is_training:
-            self.dx = np.ones_like(x)
+            self.cache = np.ones_like(x)
         return x + 1
 
     def backward(self, dy: np.ndarray) -> np.ndarray:
-        return dy * self.dx
+        return dy * self.cache
 
 
 def test_activation(x, dy):
@@ -50,7 +50,7 @@ def test_activation(x, dy):
 
     assert activation.type == "module.activation.dummy"
     assert not activation._is_training
-    assert activation.dx == 0.0
+    assert activation.cache is None
 
     # No training
 
@@ -58,7 +58,7 @@ def test_activation(x, dy):
     assert isinstance(out, np.ndarray)
     assert np.all(out == x + 1.0)
     assert not activation._is_training
-    assert activation.dx == 0.0
+    assert activation.cache is None
 
     # Training
 
@@ -67,7 +67,7 @@ def test_activation(x, dy):
     assert isinstance(out_with_train, np.ndarray)
     assert np.all(out_with_train == out)
     assert activation._is_training
-    assert np.all(activation.dx == np.ones_like(x))
+    assert np.all(activation.cache == np.ones_like(x))
 
     # Backward
 
@@ -84,7 +84,7 @@ def test_celu(x, dy):
 
     assert activation.type == "module.activation.celu"
     assert not activation._is_training
-    assert activation.dx == 0.0
+    assert activation.cache is None
 
     # No training
 
@@ -93,7 +93,7 @@ def test_celu(x, dy):
     assert isinstance(out, np.ndarray)
     assert np.all(out == expected)
     assert not activation._is_training
-    assert activation.dx == 0.0
+    assert activation.cache is None
 
     # Training
 
@@ -103,7 +103,7 @@ def test_celu(x, dy):
     assert isinstance(out_with_train, np.ndarray)
     assert np.all(out_with_train == expected_train)
     assert activation._is_training
-    assert np.all(activation.dx == np.where(x > 0.0, 1.0, np.exp(x / 1.0)))
+    assert np.all(activation.cache == np.where(x > 0.0, 1.0, np.exp(x / 1.0)))
 
     # Backward
 
@@ -120,7 +120,7 @@ def test_elu(x, dy):
 
     assert activation.type == "module.activation.elu"
     assert not activation._is_training
-    assert activation.dx == 0.0
+    assert activation.cache is None
 
     # No training
 
@@ -129,7 +129,7 @@ def test_elu(x, dy):
     assert isinstance(out, np.ndarray)
     assert np.allclose(out, expected)
     assert not activation._is_training
-    assert activation.dx == 0.0
+    assert activation.cache is None
 
     # Training
 
@@ -140,7 +140,7 @@ def test_elu(x, dy):
     assert np.allclose(out_with_train, expected_train)
     assert activation._is_training
     assert np.allclose(
-        activation.dx,
+        activation.cache,
         np.where(x > 0.0, 1.0, 1.0 * np.exp(x))
     )
 
@@ -162,7 +162,7 @@ def test_glu(x, dy):
 
     assert activation.type == "module.activation.glu"
     assert not activation._is_training
-    assert activation.dx == 0.0
+    assert activation.cache is None
 
     # No training
 
@@ -174,7 +174,7 @@ def test_glu(x, dy):
     assert isinstance(out, np.ndarray)
     assert np.allclose(out, expected)
     assert not activation._is_training
-    assert activation.dx == 0.0
+    assert activation.cache is None
 
     # Training
 
@@ -189,7 +189,7 @@ def test_glu(x, dy):
     grad_a = sigmoid
     grad_b = x_a * sigmoid * (1 - sigmoid)
     expected_dx = np.hstack([grad_a, grad_b])
-    assert np.allclose(activation.dx, expected_dx)
+    assert np.allclose(activation.cache, expected_dx)
 
     # Backward
 
@@ -207,14 +207,14 @@ def test_gelu(x, dy):
         # Initialization
         assert activation.type == "module.activation.gelu"
         assert not activation._is_training
-        assert activation.dx == 0.0
+        assert activation.cache is None
 
         # No training
         out = activation.forward(x)
         assert isinstance(out, np.ndarray)
         assert out.shape == x.shape
         assert not activation._is_training
-        assert activation.dx == 0.0
+        assert activation.cache is None
 
         # Training
         activation.train()
@@ -222,8 +222,8 @@ def test_gelu(x, dy):
         assert isinstance(out_train, np.ndarray)
         assert out_train.shape == x.shape
         assert activation._is_training
-        assert isinstance(activation.dx, np.ndarray)
-        assert activation.dx.shape == x.shape
+        assert isinstance(activation.cache, np.ndarray)
+        assert activation.cache.shape == x.shape
 
         # Backward
         dx_new = activation.backward(dy)
@@ -238,7 +238,7 @@ def test_leaky_relu(x, dy):
     # Initialization
     assert activation.type == "module.activation.leaky_relu"
     assert not activation._is_training
-    assert activation.dx == 0.0
+    assert activation.cache is None
 
     # No training
     out = activation.forward(x)
@@ -246,7 +246,7 @@ def test_leaky_relu(x, dy):
     assert isinstance(out, np.ndarray)
     assert np.allclose(out, expected)
     assert not activation._is_training
-    assert activation.dx == 0.0
+    assert activation.cache is None
 
     # Training
     activation.train()
@@ -255,7 +255,7 @@ def test_leaky_relu(x, dy):
     assert np.allclose(out_train, expected)
     assert activation._is_training
     assert np.allclose(
-        activation.dx,
+        activation.cache,
         np.where(x > 0, 1.0, 0.01)
     )
 
@@ -272,7 +272,7 @@ def test_relu(x, dy):
     # Initialization
     assert activation.type == "module.activation.relu"
     assert not activation._is_training
-    assert activation.dx == 0.0
+    assert activation.cache is None
 
     # No training
     out = activation.forward(x)
@@ -280,7 +280,7 @@ def test_relu(x, dy):
     assert isinstance(out, np.ndarray)
     assert np.allclose(out, expected)
     assert not activation._is_training
-    assert activation.dx == 0.0
+    assert activation.cache is None
 
     # Training
     activation.train()
@@ -289,7 +289,7 @@ def test_relu(x, dy):
     assert np.allclose(out_train, expected)
     assert activation._is_training
     assert np.allclose(
-        activation.dx,
+        activation.cache,
         (x > 0).astype(float)
     )
 
@@ -306,7 +306,7 @@ def test_relu6(x, dy):
     # Initialization
     assert activation.type == "module.activation.relu6"
     assert not activation._is_training
-    assert activation.dx == 0.0
+    assert activation.cache is None
 
     # No training
     out = activation.forward(x)
@@ -314,7 +314,7 @@ def test_relu6(x, dy):
     assert isinstance(out, np.ndarray)
     assert np.allclose(out, expected)
     assert not activation._is_training
-    assert activation.dx == 0.0
+    assert activation.cache is None
 
     # Training
     activation.train()
@@ -323,7 +323,7 @@ def test_relu6(x, dy):
     assert np.allclose(out_train, expected)
     assert activation._is_training
     mask = ((x > 0) & (x < 6)).astype(float)
-    assert np.allclose(activation.dx, mask)
+    assert np.allclose(activation.cache, mask)
 
     # Backward
     dx_new = activation.backward(dy)
@@ -341,7 +341,7 @@ def test_selu(x, dy):
     # Initialization
     assert activation.type == "module.activation.selu"
     assert not activation._is_training
-    assert activation.dx == 0.0
+    assert activation.cache is None
 
     # No training
     out = activation.forward(x)
@@ -349,7 +349,7 @@ def test_selu(x, dy):
     assert isinstance(out, np.ndarray)
     assert np.allclose(out, expected)
     assert not activation._is_training
-    assert activation.dx == 0.0
+    assert activation.cache is None
 
     # Training
     activation.train()
@@ -358,7 +358,7 @@ def test_selu(x, dy):
     assert np.allclose(out_train, expected)
     assert activation._is_training
     dx_expected = scale * np.where(x > 0, 1.0, alpha * np.exp(x))
-    assert np.allclose(activation.dx, dx_expected)
+    assert np.allclose(activation.cache, dx_expected)
 
     # Backward
     dx_new = activation.backward(dy)
@@ -373,7 +373,7 @@ def test_sigmoid(x, dy):
     # Initialization
     assert activation.type == "module.activation.sigmoid"
     assert not activation._is_training
-    assert activation.dx == 0.0
+    assert activation.cache is None
 
     # No training
     out = activation.forward(x)
@@ -382,7 +382,7 @@ def test_sigmoid(x, dy):
     assert isinstance(out, np.ndarray)
     assert np.allclose(out, expected)
     assert not activation._is_training
-    assert activation.dx == 0.0
+    assert activation.cache is None
 
     # Training
     activation.train()
@@ -392,7 +392,7 @@ def test_sigmoid(x, dy):
     assert np.allclose(out_train, sig)
     assert activation._is_training
     dx_expected = sig * (1.0 - sig)
-    assert np.allclose(activation.dx, dx_expected)
+    assert np.allclose(activation.cache, dx_expected)
 
     # Backward
     dx_new = activation.backward(dy)
@@ -407,7 +407,7 @@ def test_silu(x, dy):
     # Initialization
     assert activation.type == "module.activation.silu"
     assert not activation._is_training
-    assert activation.dx == 0.0
+    assert activation.cache is None
 
     # No training
     out = activation.forward(x)
@@ -416,7 +416,7 @@ def test_silu(x, dy):
     assert isinstance(out, np.ndarray)
     assert np.allclose(out, expected)
     assert not activation._is_training
-    assert activation.dx == 0.0
+    assert activation.cache is None
 
     # Training
     activation.train()
@@ -426,7 +426,7 @@ def test_silu(x, dy):
     assert isinstance(out_train, np.ndarray)
     assert np.allclose(out_train, x * sig)
     assert activation._is_training
-    assert np.allclose(activation.dx, dx_expected)
+    assert np.allclose(activation.cache, dx_expected)
 
     # Backward
     dx_new = activation.backward(dy)
@@ -441,7 +441,7 @@ def test_swish(x, dy):
     # Initialization
     assert activation.type == "module.activation.swish"
     assert not activation._is_training
-    assert activation.dx == 0.0
+    assert activation.cache is None
 
     # No training
     out = activation.forward(x)
@@ -450,7 +450,7 @@ def test_swish(x, dy):
     assert isinstance(out, np.ndarray)
     assert np.allclose(out, expected)
     assert not activation._is_training
-    assert activation.dx == 0.0
+    assert activation.cache is None
 
     # Training
     activation.train()
@@ -460,7 +460,7 @@ def test_swish(x, dy):
     assert isinstance(out_train, np.ndarray)
     assert np.allclose(out_train, x * sig)
     assert activation._is_training
-    assert np.allclose(activation.dx, dx_expected)
+    assert np.allclose(activation.cache, dx_expected)
 
     # Backward
     dx_new = activation.backward(dy)
@@ -475,7 +475,7 @@ def test_tanh(x, dy):
     # Initialization
     assert activation.type == "module.activation.tanh"
     assert not activation._is_training
-    assert activation.dx == 0.0
+    assert activation.cache is None
 
     # No training
     out = activation.forward(x)
@@ -484,7 +484,7 @@ def test_tanh(x, dy):
     assert isinstance(out, np.ndarray)
     assert np.allclose(out, expected)
     assert not activation._is_training
-    assert activation.dx == 0.0
+    assert activation.cache is None
 
     # Training
     activation.train()
@@ -494,7 +494,7 @@ def test_tanh(x, dy):
     assert isinstance(out_train, np.ndarray)
     assert np.allclose(out_train, t)
     assert activation._is_training
-    assert np.allclose(activation.dx, dx_expected)
+    assert np.allclose(activation.cache, dx_expected)
 
     # Backward
     dx_new = activation.backward(dy)
@@ -510,7 +510,7 @@ def test_softmax(x, dy):
     # Initialization
     assert activation.type == "module.activation.softmax"
     assert not activation._is_training
-    assert activation.dx == 0.0
+    assert activation.cache is None
 
     # No training
     out = activation.forward(x)
@@ -520,7 +520,7 @@ def test_softmax(x, dy):
     assert out.shape == x.shape
     assert np.allclose(out, expected)
     assert not activation._is_training
-    assert activation.dx == 0.0
+    assert activation.cache is None
 
     # Training
     activation.train()
@@ -529,7 +529,7 @@ def test_softmax(x, dy):
     assert out_train.shape == x.shape
     assert activation._is_training
     dx_expected = expected
-    assert np.allclose(activation.dx, dx_expected)
+    assert np.allclose(activation.cache, dx_expected)
 
     # Backward
     dx_new = activation.backward(dy)
@@ -552,7 +552,7 @@ def test_logsoftmax(x, dy):
     # Initialization
     assert activation.type == "module.activation.logsoftmax"
     assert not activation._is_training
-    assert activation.dx == 0.0
+    assert activation.cache is None
 
     # No training
     out = activation.forward(x)
@@ -563,7 +563,7 @@ def test_logsoftmax(x, dy):
     assert isinstance(out, np.ndarray)
     assert np.allclose(out, expected)
     assert not activation._is_training
-    assert activation.dx == 0.0
+    assert activation.cache is None
 
     # Training
     activation.train()
@@ -574,7 +574,7 @@ def test_logsoftmax(x, dy):
 
     exp_shifted = np.exp(shifted)
     softmax = exp_shifted / np.sum(exp_shifted, axis=1, keepdims=True)
-    assert np.allclose(activation.dx, softmax)
+    assert np.allclose(activation.cache, softmax)
 
     # Backward
     dx_new = activation.backward(dy)

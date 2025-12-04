@@ -39,7 +39,7 @@ def dy():
 class DummyLoss(Loss):
     def forward(self, y, y_hat):
         if self._is_training:
-            self.dx = np.ones_like(y_hat) * 0.5
+            self.cache = np.ones_like(y_hat) * 0.5
         return np.sum(y_hat - y)
 
 
@@ -49,19 +49,19 @@ def test_dummy_loss(y, y_hat_regression, dy):
     # Initialization
     assert loss.type == "module.loss.dummy"
     assert not loss._is_training
-    assert loss.dx == 0.0
+    assert loss.cache is None
 
     # Forward no training
     out = loss.forward(y, y_hat_regression)
     assert isinstance(out, np.ndarray) or np.isscalar(out)
     assert not loss._is_training
-    assert loss.dx == 0.0
+    assert loss.cache is None
 
     # Forward training
     loss.train()
     out_train = loss.forward(y, y_hat_regression)
     assert loss._is_training
-    assert np.all(loss.dx == 0.5)
+    assert np.all(loss.cache == 0.5)
 
     # Backward
     dx = loss.backward()
@@ -88,17 +88,17 @@ def test_cross_entropy(y, y_hat_classification):
     clipped_preds = np.clip(softmax, eps, 1 - eps)
     expected_loss = -np.sum(y_one_hot * np.log(clipped_preds)) / len(y)
     assert np.allclose(loss_val, expected_loss, rtol=1e-5, atol=1e-8)
-    assert ce.dx == 0.0
+    assert ce.cache is None
 
     # Forward training
     ce.train()
     loss_train = ce.forward(y, y_hat_classification)
     assert ce._is_training
-    assert isinstance(ce.dx, np.ndarray)
-    assert ce.dx.shape == y_hat_classification.shape
+    assert isinstance(ce.cache, np.ndarray)
+    assert ce.cache.shape == y_hat_classification.shape
     # Expected gradient: (softmax - one_hot) / N
     expected_dx = (clipped_preds - y_one_hot) / len(y)
-    assert np.allclose(ce.dx, expected_dx, rtol=1e-5, atol=1e-8)
+    assert np.allclose(ce.cache, expected_dx, rtol=1e-5, atol=1e-8)
 
     # Backward
     dx = ce.backward()
@@ -117,16 +117,16 @@ def test_elasticnet(y, y_hat_regression):
     l2 = np.sum((y_hat_regression - y)**2) / len(y)
     expected_out = 0.3 * l1 + 0.7 * l2
     assert np.allclose(out, expected_out, rtol=1e-5, atol=1e-8)
-    assert en.dx == 0.0
+    assert en.cache is None
 
     # Forward training
     en.train()
     out_train = en.forward(y, y_hat_regression)
-    assert np.all(en.dx.shape == y_hat_regression.shape)
+    assert np.all(en.cache.shape == y_hat_regression.shape)
     # Expected gradient: 0.3 * sign + 0.7 * 2 * diff / N
     diff = y_hat_regression - y
     expected_dx = 0.3 * np.sign(diff) / len(y) + 0.7 * (2 * diff / len(y))
-    assert np.allclose(en.dx, expected_dx, rtol=1e-5, atol=1e-8)
+    assert np.allclose(en.cache, expected_dx, rtol=1e-5, atol=1e-8)
 
     # Backward
     dx = en.backward()
@@ -148,11 +148,11 @@ def test_gaussian_nll(y, y_hat_regression):
 
     gn.train()
     out_train = gn.forward(y, y_hat_regression)
-    assert gn.dx.shape == y_hat_regression.shape
+    assert gn.cache.shape == y_hat_regression.shape
 
     N = len(y)
     expected_dx = diff / var / N
-    assert np.allclose(gn.dx, expected_dx, rtol=1e-5, atol=1e-8)
+    assert np.allclose(gn.cache, expected_dx, rtol=1e-5, atol=1e-8)
 
     dx = gn.backward()
     assert dx.shape == y_hat_regression.shape
@@ -172,10 +172,10 @@ def test_kldiv(y_hat_regression):
 
     kld.train()
     kld.forward(y_dist, y_dist)
-    assert kld.dx.shape == y_dist.shape
+    assert kld.cache.shape == y_dist.shape
     # Gradient = -p / q / N, here p=q, so gradient = -1 / N for each element
     expected_dx = -np.ones_like(y_dist) / len(y_dist)
-    assert np.allclose(kld.dx, expected_dx, rtol=1e-5, atol=1e-8)
+    assert np.allclose(kld.cache, expected_dx, rtol=1e-5, atol=1e-8)
 
     dx = kld.backward()
     assert dx.shape == y_dist.shape
@@ -191,10 +191,10 @@ def test_mae(y, y_hat_regression):
 
     mae.train()
     mae.forward(y, y_hat_regression)
-    assert mae.dx.shape == y_hat_regression.shape
+    assert mae.cache.shape == y_hat_regression.shape
     # Gradient = sign(y_hat - y) / N
     expected_dx = np.sign(y_hat_regression - y) / len(y)
-    assert np.allclose(mae.dx, expected_dx, rtol=1e-5, atol=1e-8)
+    assert np.allclose(mae.cache, expected_dx, rtol=1e-5, atol=1e-8)
 
     dx = mae.backward()
     assert dx.shape == y_hat_regression.shape
@@ -210,7 +210,7 @@ def test_modified_uber(y, y_hat_regression):
 
     mu.train()
     mu.forward(y, y_hat_regression)
-    assert mu.dx.shape == y_hat_regression.shape
+    assert mu.cache.shape == y_hat_regression.shape
     # Gradient as per original code's piecewise formula
     diff = y_hat_regression - y
     dx_expected = np.zeros_like(diff)
@@ -223,7 +223,7 @@ def test_modified_uber(y, y_hat_regression):
             dx_expected[i] = d / N
         else:  # d > 1
             dx_expected[i] = 1 / N
-    assert np.allclose(mu.dx, dx_expected, rtol=1e-5, atol=1e-8)
+    assert np.allclose(mu.cache, dx_expected, rtol=1e-5, atol=1e-8)
 
     dx = mu.backward()
     assert dx.shape == y_hat_regression.shape
@@ -240,10 +240,10 @@ def test_mse(y, y_hat_regression):
 
     mse.train()
     mse.forward(y, y_hat_regression)
-    assert mse.dx.shape == y_hat_regression.shape
+    assert mse.cache.shape == y_hat_regression.shape
     # Gradient = 2 * diff / N
     expected_dx = 2 * diff / len(y)
-    assert np.allclose(mse.dx, expected_dx, rtol=1e-5, atol=1e-8)
+    assert np.allclose(mse.cache, expected_dx, rtol=1e-5, atol=1e-8)
 
     dx = mse.backward()
     assert dx.shape == y_hat_regression.shape
@@ -263,10 +263,10 @@ def test_nll(y_hat_regression):
 
     nll.train()
     nll.forward(y_target, y_hat_regression)
-    assert nll.dx.shape == y_hat_regression.shape
+    assert nll.cache.shape == y_hat_regression.shape
     # Gradient = -y / clipped / N
     expected_dx = -y_target / clipped / len(y_target)
-    assert np.allclose(nll.dx, expected_dx, rtol=1e-5, atol=1e-8)
+    assert np.allclose(nll.cache, expected_dx, rtol=1e-5, atol=1e-8)
 
     dx = nll.backward()
     assert dx.shape == y_hat_regression.shape
@@ -285,10 +285,10 @@ def test_poisson_nll(y_hat_regression):
 
     pn.train()
     pn.forward(y_target, y_hat_regression)
-    assert pn.dx.shape == y_hat_regression.shape
+    assert pn.cache.shape == y_hat_regression.shape
     # Gradient = (1 - y_target / clipped) / N to match per-sample normalization
     expected_dx = (1 - y_target / clipped_y_hat) / len(y_target)
-    assert np.allclose(pn.dx, expected_dx, rtol=1e-5, atol=1e-8)
+    assert np.allclose(pn.cache, expected_dx, rtol=1e-5, atol=1e-8)
 
     dx = pn.backward()
     assert dx.shape == y_hat_regression.shape

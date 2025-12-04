@@ -12,9 +12,9 @@ class DummyModule(Module):
         return x * 2
 
     def backward(self, dy: np.ndarray) -> np.ndarray:
-        self.dx = dy * 0.5
+        self.cache = dy * 0.5
         self.grads["w"] = dy
-        return self.dx
+        return self.cache
 
 def test_module_initialization():
     mod = DummyModule()
@@ -22,7 +22,7 @@ def test_module_initialization():
     assert mod.has_params is True
     assert isinstance(mod.next, list)
     assert isinstance(mod.prev, list)
-    assert mod.dx == 0.0
+    assert mod.cache is None
 
 def test_module_str_representation():
     mod = DummyModule()
@@ -56,10 +56,10 @@ def test_train_eval_toggle():
 
 def test_clear_method():
     mod = DummyModule()
-    mod.dx = np.array([1.0])
+    mod.cache = np.array([1.0])
     mod.grads["w"] = np.array([5.0, 5.0])
     mod.clear()
-    assert mod.dx == 0.0
+    assert mod.cache is None
     for k, v in mod.grads.items():
         assert np.all(v == 0.0)
 

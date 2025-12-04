@@ -18,7 +18,7 @@ class Loss(Module):
         raise NotImplementedError()
 
     def backward(self) -> np.ndarray:
-        return self.dx  
+        return self.cache  
     
 
 class CrossEntropy(Loss): 
@@ -49,7 +49,7 @@ class CrossEntropy(Loss):
 
             if self._is_training:
                 probs[np.arange(n), y] -= 1.0
-                self.dx = probs / n
+                self.cache = probs / n
 
             return loss
 
@@ -59,7 +59,7 @@ class CrossEntropy(Loss):
         if self._is_training:
             probs[np.arange(n), y] -= 1.0
             probs *= sample_weights[:, None]
-            self.dx = probs / n
+            self.cache = probs / n
 
         return loss
 
@@ -78,7 +78,7 @@ class ElasticNet(Loss):
         l2_term = diff ** 2
 
         if self._is_training:
-            self.dx = (
+            self.cache = (
                 self.alpha_l1 * np.sign(diff) / diff.size
                 + self.alpha_l2 * 2.0 * diff / diff.size
             )
@@ -99,7 +99,7 @@ class GaussianNLL(Loss):
         n = len(y)
 
         if self._is_training:
-            self.dx = diff / var / n
+            self.cache = diff / var / n
 
         return 0.5 * ((diff ** 2) / var + np.log(2 * np.pi * var)).sum() / n
 
@@ -117,7 +117,7 @@ class KLDiv(Loss):
         n = len(y)
 
         if self._is_training:
-            self.dx = -p / q / n
+            self.cache = -p / q / n
 
         return (p * np.log(p / q)).sum() / n
 
@@ -131,7 +131,7 @@ class MAE(Loss):
         diff = y_hat - y
 
         if self._is_training:
-            self.dx = np.sign(diff, dtype=float) / diff.size
+            self.cache = np.sign(diff, dtype=float) / diff.size
 
         return np.abs(diff).mean()
     
@@ -154,7 +154,7 @@ class ModifiedUber(Loss):
         )
 
         if self._is_training:
-            self.dx = np.where(
+            self.cache = np.where(
                 mask,
                 diff / y.size,
                 self.alpha * self.delta * np.sign(diff) / y.size,
@@ -172,7 +172,7 @@ class MSE(Loss):
         diff = y_hat - y
 
         if self._is_training:
-            self.dx = 2.0 * diff / diff.size
+            self.cache = 2.0 * diff / diff.size
 
         return (diff ** 2).mean()
 
@@ -190,7 +190,7 @@ class NLL(Loss):
         n = len(y)
 
         if self._is_training:
-            self.dx = -y / clipped / n
+            self.cache = -y / clipped / n
 
         return -(y * log_probs).sum() / n
 
@@ -207,6 +207,6 @@ class PoissonNLL(Loss):
         n = len(y)
 
         if self._is_training:
-            self.dx = (1 - y / clipped) / n
+            self.cache = (1 - y / clipped) / n
 
         return (clipped - y * np.log(clipped)).sum() / n
