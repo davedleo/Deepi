@@ -39,3 +39,18 @@ class Initializer(ABC):
     @abstractmethod
     def initialize(self, shape: Tuple[int, ...]) -> np.ndarray:
         raise NotImplementedError()
+
+
+class Uniform(Initializer): 
+
+    def __init__(
+            self,
+            low: float = 0.0, 
+            high: float = 1.0
+    ): 
+        super().__init__("uniform")
+        self.low = low 
+        self.high = high
+
+    def initialize(self, shape: Tuple[int, ...]) -> np.ndarray: 
+        return np.random.uniform(self.low, self.high, shape)
