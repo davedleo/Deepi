@@ -1,6 +1,6 @@
 import pytest
 import numpy as np
-from deepi.modules.losses import (
+from deepi.modules.loss import (
     Loss,
     CrossEntropy,
     ElasticNet,
