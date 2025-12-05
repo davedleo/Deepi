@@ -1,6 +1,6 @@
 import pytest
 import numpy as np
-from deepi.modules.activations import (
+from deepi.modules.activation import (
     Activation,
     CELU,
     ELU,
@@ -545,7 +545,7 @@ def test_softmax(x, dy):
 
 
 def test_logsoftmax(x, dy):
-    from deepi.modules.activations import LogSoftmax
+    from deepi.modules.activation import LogSoftmax
 
     activation = LogSoftmax(axis=1)
 

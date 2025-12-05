@@ -1,7 +1,7 @@
 from .core import Module
-from . import activations
+from . import activation
 
 __all__ = [
     "Module",
-    "activations"
+    "activation"
 ]

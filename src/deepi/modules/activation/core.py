@@ -13,7 +13,8 @@ class Activation(Module):
         super().__init__(f"activation.{_type}", False)
 
     def backward(self, dy: np.ndarray) -> np.ndarray:
-        return self.cache * dy
+        dx = self.cache
+        return dx * dy
 
 
 class CELU(Activation):
@@ -234,8 +235,9 @@ class Softmax(Activation):
         return y
 
     def backward(self, dy: np.ndarray) -> np.ndarray:
-        dot = np.sum(self.cache * dy, axis=self.axis, keepdims=True)
-        return self.cache * (dy - dot)
+        y = self.cache
+        dot = np.sum(y * dy, axis=self.axis, keepdims=True)
+        return y * (dy - dot)
 
 
 class LogSoftmax(Activation):
@@ -247,15 +249,18 @@ class LogSoftmax(Activation):
     def forward(self, x: np.ndarray) -> np.ndarray:
         x_max = np.max(x, axis=self.axis, keepdims=True)
         shifted = x - x_max
-        logsumexp = np.log(np.sum(np.exp(shifted), axis=self.axis, keepdims=True))
+        exp_shifted = np.exp(shifted)
+        exp_shifted_sum = np.sum(exp_shifted, axis=self.axis, keepdims=True)
+        logsumexp = np.log(exp_shifted_sum)
         y = shifted - logsumexp
 
         if self._is_training:
             exp_shifted = np.exp(shifted)
-            self.cache = exp_shifted / np.sum(exp_shifted, axis=self.axis, keepdims=True)
+            self.cache = exp_shifted / exp_shifted_sum
 
         return y
 
     def backward(self, dy: np.ndarray) -> np.ndarray:
+        softmax = self.cache
         dot = np.sum(dy, axis=self.axis, keepdims=True)
-        return dy - self.cache * dot
+        return dy - softmax * dot

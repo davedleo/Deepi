@@ -63,6 +63,19 @@ def test_clear_method():
     for k, v in mod.grads.items():
         assert np.all(v == 0.0)
 
+def test_get_params():
+    mod = DummyModule()
+    params = mod.get_params()
+    assert isinstance(params, dict)
+    assert "w" in params
+    assert np.array_equal(params["w"], np.array([1.0, 2.0]))
+
+def test_load_params():
+    mod = DummyModule()
+    new_params = {"w": np.array([10.0, 20.0])}
+    mod.load_params(new_params)
+    assert np.array_equal(mod.params["w"], new_params["w"])
+
 def test_abstract_module_instantiation():
     from deepi.modules.core import Module
     with pytest.raises(TypeError):

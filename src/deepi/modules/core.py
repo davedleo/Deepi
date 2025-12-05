@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import Dict, List, Optional
+from typing import Callable, Dict, List, Optional, Tuple, Union
 
 import numpy as np
 
@@ -16,13 +16,12 @@ class Module(ABC):
         self.next: List["Module"] = []
         self.prev: List["Module"] = []
 
-        self.cache: Optional[np.ndarray] = None
+        self.cache: Optional[Union[np.ndarray, Tuple[np.ndarray, ...]]] = None
         self._is_training: bool = False
 
         self._has_params = _has_params
-        if self._has_params:
-            self.params: Dict[str, np.ndarray] = dict()
-            self.grads: Dict[str, np.ndarray] = dict()
+        self.params: Dict[str, Union[np.ndarray, Tuple[int, ...]]] = dict() 
+        self.grads: Dict[str, Callable] = dict()
 
     def __str__(self) -> str:
         parts = self._type.split('.')
@@ -53,6 +52,13 @@ class Module(ABC):
             self.next.append(module)
         if self not in module.prev:
             module.prev.append(self)
+
+    def get_params(self) -> Dict[str, np.ndarray]: 
+        return self.params
+    
+    def load_params(self, params: Dict[str, np.ndarray]): 
+        for k, v in params.items(): 
+            self.params[k] = v
 
     def train(self) -> None:
         self._is_training = True
