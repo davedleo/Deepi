@@ -15,14 +15,14 @@ def dy():
 
 def test_input_forward_backward(x, dy):
     # Test Input without storing gradient
-    inp = Input(in_shape=x.shape)
+    inp = Input(in_shape=x.shape[1:])
     out = inp.forward(x)
     assert isinstance(out, np.ndarray)
     assert np.all(out == x)
     assert inp.cache is None
 
     # Test Input with store_gradient=True
-    inp_grad = Input(in_shape=x.shape, store_gradient=True)
+    inp_grad = Input(in_shape=x.shape[1:], store_gradient=True)
     inp_grad.forward(x)
     inp_grad.backward(dy)
     assert np.all(inp_grad.cache == dy)
@@ -32,8 +32,8 @@ def test_input_forward_default_empty():
     shape = (2, 3, 4)
     inp = Input(in_shape=shape)
     out = inp.forward(None)
-    assert out.shape == shape
-    assert np.all(out == np.empty(shape)) or out.shape == shape
+    assert out.shape == (1, 2, 3, 4)
+    assert np.all(out == np.empty((1, 2, 3, 4))) or out.shape == (1, 2, 3, 4)
 
 
 def test_flatten_forward_backward(x, dy):

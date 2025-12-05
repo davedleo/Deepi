@@ -26,7 +26,7 @@ class Input(Flow):
         self.store_gradient = store_gradient
 
     def forward(self, x: Optional[np.ndarray] = None) -> np.ndarray: 
-        return x if x is not None else np.empty(self.in_shape, dtype=float)
+        return x if x is not None else np.empty((1,) + (self.in_shape), dtype=float)
     
     def backward(self, dy: np.ndarray): 
         if self.store_gradient: 
