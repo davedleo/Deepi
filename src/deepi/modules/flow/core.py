@@ -11,7 +11,7 @@ class Flow(Module):
             self,
             _type: str
     ): 
-        super().__init__(f"flow.{_type}")
+        super().__init__(f"flow.{_type}", False)
 
 
 class Input(Flow): 
@@ -26,7 +26,7 @@ class Input(Flow):
         self.store_gradient = store_gradient
 
     def forward(self, x: Optional[np.ndarray] = None) -> np.ndarray: 
-        return x if x else np.empty(self.in_shape, dtype=float)
+        return x if x is not None else np.empty(self.in_shape, dtype=float)
     
     def backward(self, dy: np.ndarray): 
         if self.store_gradient: 
@@ -60,7 +60,7 @@ class Reshape(Flow):
     def forward(self, x: np.ndarray) -> np.ndarray:
         if self._is_training:
             self.cache = x.shape 
-        return x.reshape(len(x) + self.out_shape)
+        return x.reshape((len(x),) + self.out_shape)
 
     def backward(self, dy: np.ndarray) -> np.ndarray:
         in_shape = self.cache
