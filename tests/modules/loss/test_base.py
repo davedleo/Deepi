@@ -1,6 +1,6 @@
 import numpy as np
 import pytest
-from deepi.modules.loss.base import Loss
+from deepi.modules.loss import Loss
 
 # --------------------------------------------------------------------------
 # Dummy loss for testing
@@ -14,9 +14,9 @@ class DummyLoss(Loss):
         # element-wise squared error
         return (y_hat - y) ** 2
 
-    def gradients(self):
-        y, y_hat = self.x
-        return 2 * (y_hat - y)
+    def gradients(self, y_hat, y, dy=None):
+        grad = 2 * (y_hat - y)
+        return grad
 
 # --------------------------------------------------------------------------
 # Forward tests
@@ -29,7 +29,7 @@ def test_forward_exact(reduction):
     y = np.array([[1.0, 2.0, 3.0]])
     y_hat = np.array([[1.5, 1.5, 3.0]])
 
-    loss = m.forward(y, y_hat)
+    loss = m.forward(y_hat, y)
 
     elementwise = (y_hat - y) ** 2
     if reduction is None:
@@ -40,8 +40,8 @@ def test_forward_exact(reduction):
         expected = np.array([[elementwise.mean()]])
 
     assert np.allclose(loss, expected)
-    assert np.allclose(m.x[0], y)
-    assert np.allclose(m.x[1], y_hat)
+    assert np.allclose(m.x[0], y_hat)
+    assert np.allclose(m.x[1], y)
     assert np.allclose(m.y, expected)
 
 # --------------------------------------------------------------------------
@@ -54,7 +54,7 @@ def test_backward_exact(reduction):
     m.train()
     y = np.array([[1.0, 2.0, 3.0]])
     y_hat = np.array([[1.5, 1.5, 3.0]])
-    m.forward(y, y_hat)
+    m.forward(y_hat, y)
 
     grad = m.backward()
 
@@ -74,7 +74,7 @@ def test_backward_accumulation():
     m.train()
     y = np.array([[1.0, 2.0]])
     y_hat = np.array([[2.0, 1.0]])
-    m.forward(y, y_hat)
+    m.forward(y_hat, y)
 
     grad1 = m.backward()
     grad2 = m.backward()
@@ -95,13 +95,13 @@ def test_train_eval_mode_caching():
 
     m = DummyLoss(reduction="mean")
     m.train()
-    m.forward(y, y_hat)
+    m.forward(y_hat, y)
     assert m.x is not None
     assert m.y is not None
 
     m.clear()  # clear cache before switching to eval
     m.eval()
-    m.forward(y, y_hat)
+    m.forward(y_hat, y)
     assert m.x is None
     assert m.y is None
 
@@ -115,7 +115,7 @@ def test_clear_resets():
 
     m = DummyLoss(reduction="mean")
     m.train()
-    m.forward(y, y_hat)
+    m.forward(y_hat, y)
     m.backward()
 
     m.clear()

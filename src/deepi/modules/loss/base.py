@@ -14,7 +14,7 @@ class Loss(Module):
     def __init__(
         self,
         _type: str,
-        reduction: Optional[str] = "mean",
+        reduction: Optional[str]
     ):
         super().__init__(f"loss.{_type}", False)
         if reduction not in _REDUCTIONS:
@@ -23,12 +23,12 @@ class Loss(Module):
         self.reduction = reduction
 
     @abstractmethod
-    def transform(self, y: np.ndarray, y_hat: np.ndarray) -> np.ndarray:
+    def transform(self, y_hat: np.ndarray, y: np.ndarray) -> np.ndarray:
         """Compute element-wise loss."""
         pass
 
     @abstractmethod
-    def gradients(self) -> np.ndarray:
+    def gradients(self, y_hat: np.ndarray, y: np.ndarray) -> np.ndarray:
         """Compute gradients of the loss."""
         pass
 
@@ -37,22 +37,23 @@ class Loss(Module):
         if self.reduction is None:
             return loss
         elif self.reduction == "sum":
-            return loss.sum(keepdims=True)
+            return loss.sum()
         else:
-            return loss.mean(keepdims=True)
+            return loss.mean()
 
-    def forward(self, y: np.ndarray, y_hat: np.ndarray) -> np.ndarray:
-        loss = self.transform(y, y_hat)
+    def forward(self, y_hat: np.ndarray, y: np.ndarray) -> np.ndarray:
+        loss = self.transform(y_hat, y)
         loss = self.apply_reduction(loss)
 
         if self._is_training:
-            self.x = y, y_hat
+            self.x = y_hat, y
             self.y = loss
 
         return loss
 
     def backward(self) -> np.ndarray:
-        gradient = self.gradients()
+        y_hat, y = self.x
+        gradient = self.gradients(y_hat, y)
         if self.reduction and self.reduction == "mean":
             gradient /= gradient.shape[0]
 
