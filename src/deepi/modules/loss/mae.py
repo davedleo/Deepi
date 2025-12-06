@@ -11,4 +11,4 @@ class MAE(Loss):
         return (np.abs(y_hat - y)).mean(1)
     
     def gradients(self, y_hat: np.ndarray, y: np.ndarray) -> np.ndarray:
-        return np.sign(y_hat - y) / y_hat.shape[1]
+        return np.sign(y_hat - y, dtype=np.float64) / y_hat.shape[1]
