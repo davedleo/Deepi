@@ -4,6 +4,7 @@ from .elastic_net import ElasticNet
 from .kl_div import KLDiv
 from .mae import MAE
 from .mse import MSE 
+from .nll import NLL
 from .rmse import RMSE
 
 __all__ = [
