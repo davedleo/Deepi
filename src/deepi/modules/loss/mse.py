@@ -11,4 +11,4 @@ class MSE(Loss):
         return ((y_hat - y) ** 2.0).mean(axis=1)
     
     def gradients(self, y_hat: np.ndarray, y: np.ndarray) -> np.ndarray:
-        return 2.0 * (y_hat - y)
+        return 2.0 * (y_hat - y) / y_hat.shape[1]
