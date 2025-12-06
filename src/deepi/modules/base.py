@@ -12,6 +12,7 @@ class Module(ABC):
         self.prev: List["Module"] = []
 
         self.x: Optional[ArrayOrTuple] = None
+        self.y: Optional[ArrayOrTuple] = None
         self.dy: Optional[ArrayOrTuple] = None
 
         self._is_training: bool = False
@@ -29,31 +30,46 @@ class Module(ABC):
         """Backward computation: returns gradient(s) w.r.t inputs."""
         pass
 
-    def forward(self, x: ArrayOrTuple):
-        """Forward pass. x can be array or tuple."""
-        self.x = x
+    def forward(self, x: ArrayOrTuple) -> ArrayOrTuple: 
         y = self.transform(x)
-        for module in self.next:
-            module.forward(y)
+
+        if self._is_training: 
+            self.x = x # No inplace operations by design
+            self.y = y # No inplace operations by design
+
+        return y
 
     def backward(self, dy: ArrayOrTuple):
         """
         Backward pass with accumulated gradient stored in self.dy.
         dy can be a single array or a tuple of arrays.
+        Important: make defensive copies so we never mutate user-provided arrays.
         """
-        # Accumulate incoming gradient
-        if self.dy is None:
-            self.dy = dy
+        # Make defensive copy of incoming gradient(s) to avoid mutating caller's arrays
+        if isinstance(dy, np.ndarray):
+            dy_copy = np.array(dy, copy=True)
         else:
-            if isinstance(self.dy, np.ndarray):
-                self.dy += dy
-            else:
-                self.dy = tuple(a + b for a, b in zip(self.dy, dy))
+            # tuple of arrays
+            dy_copy = tuple(np.array(d, copy=True) for d in dy)
 
-        # Compute gradient to propagate to previous modules
+        # Accumulate incoming gradient into self.dy
+        if self.dy is None:
+            self.dy = dy_copy
+        else:
+            # both self.dy and dy_copy must have the same structure (ndarray or tuple)
+            if isinstance(self.dy, np.ndarray) and isinstance(dy_copy, np.ndarray):
+                # in-place accumulation on self.dy is fine because self.dy is owned by the module
+                self.dy = self.dy + dy_copy
+            elif isinstance(self.dy, tuple) and isinstance(dy_copy, tuple):
+                self.dy = tuple(a + b for a, b in zip(self.dy, dy_copy))
+            else:
+                # mismatched shapes/types — raise an informative error
+                raise TypeError("Mismatched dy types when accumulating gradients")
+
+        # Compute gradient(s) to propagate upstream
         dx = self.gradients(self.dy)
 
-        # Propagate individual gradients
+        # Propagate upstream according to dx shape
         if isinstance(dx, tuple):
             for prev_module, dx_i in zip(self.prev, dx):
                 prev_module.backward(dx_i)
@@ -84,6 +100,7 @@ class Module(ABC):
     def clear(self):
         """Clear cached values and gradients."""
         self.x = None
+        self.y = None
         self.dy = None
         if self._has_params:
             self.grads = dict()

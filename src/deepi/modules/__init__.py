@@ -1,3 +1,3 @@
-from .core import Module
+from .base import Module
 
 __all__ = ["Module"]
