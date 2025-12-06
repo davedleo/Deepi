@@ -115,11 +115,6 @@ def test_backward_local_computation():
     assert np.allclose(m.dy, dy)
     assert np.allclose(m.gradients(dy), 2 * dy)
 
-    # Additional test: call backward with dy=None
-    m.backward(None)
-    assert np.allclose(m.dy, np.ones_like(y))
-    assert np.allclose(m.gradients(m.dy), 2 * np.ones_like(y))
-
 
 def test_backward_accumulation_single_input():
     m = DummyUnary()

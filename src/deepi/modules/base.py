@@ -40,29 +40,18 @@ class Module(ABC):
 
         return y
 
-    def backward(self, dy: Optional[ArrayOrTuple]):
+    def backward(self, dy: ArrayOrTuple):
         """
         Backward pass with accumulated gradient stored in self.dy.
         dy can be None, a single array or a tuple of arrays.
         Important: make defensive copies so we never mutate user-provided arrays.
         """
-        # If dy is None, simulate gradient of ones with shape of self.y
-        if dy is None:
-            self.dy = None
-            if self.y is None:
-                raise ValueError("Cannot infer gradient shape because self.y is None and dy is None.")
-            if isinstance(self.y, np.ndarray):
-                dy_copy = np.ones_like(self.y)
-            else:
-                # tuple of arrays
-                dy_copy = tuple(np.ones_like(arr) for arr in self.y)
+        # Make defensive copy of incoming gradient(s) to avoid mutating caller's arrays
+        if isinstance(dy, np.ndarray):
+            dy_copy = np.array(dy, copy=True)
         else:
-            # Make defensive copy of incoming gradient(s) to avoid mutating caller's arrays
-            if isinstance(dy, np.ndarray):
-                dy_copy = np.array(dy, copy=True)
-            else:
-                # tuple of arrays
-                dy_copy = tuple(np.array(d, copy=True) for d in dy)
+            # tuple of arrays
+            dy_copy = tuple(np.array(d, copy=True) for d in dy)
 
         # Accumulate incoming gradient into self.dy
         if self.dy is None:

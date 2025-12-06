@@ -5,70 +5,120 @@ from deepi.modules.loss.base import Loss
 # --------------------------------------------------------------------------
 # Dummy loss for testing
 # --------------------------------------------------------------------------
+
 class DummyLoss(Loss):
-    def __init__(self, reduction="mean"):
+    def __init__(self, reduction=None):
         super().__init__("dummy", reduction=reduction)
 
-    def loss_transform(self, y, y_hat):
-        # cache inputs in self.x
-        self.x = (y, y_hat)
-        # compute elementwise squared difference
-        loss = (y_hat - y) ** 2
-        self.y = self.apply_reduction(loss)
-        return self.y
+    def transform(self, y, y_hat):
+        # element-wise squared error
+        return (y_hat - y) ** 2
 
-    def loss_gradient(self):
+    def gradients(self):
         y, y_hat = self.x
-        grad = 2 * (y_hat - y)
-        return grad
-
+        return 2 * (y_hat - y)
 
 # --------------------------------------------------------------------------
-# Tests
+# Forward tests
 # --------------------------------------------------------------------------
+
 @pytest.mark.parametrize("reduction", [None, "sum", "mean"])
-def test_forward_and_reduction(reduction):
+def test_forward_exact(reduction):
     m = DummyLoss(reduction=reduction)
-    y = np.array([1.0, 2.0, 3.0])
-    y_hat = np.array([1.5, 1.5, 3.0])
+    m.train()
+    y = np.array([[1.0, 2.0, 3.0]])
+    y_hat = np.array([[1.5, 1.5, 3.0]])
 
-    loss = m.transform(y, y_hat)
+    loss = m.forward(y, y_hat)
 
     elementwise = (y_hat - y) ** 2
     if reduction is None:
         expected = elementwise
     elif reduction == "sum":
-        expected = elementwise.sum(keepdims=True)
+        expected = np.array([[elementwise.sum()]])
     else:  # mean
-        expected = elementwise.mean(keepdims=True)
+        expected = np.array([[elementwise.mean()]])
 
     assert np.allclose(loss, expected)
-    assert m.x == (y, y_hat)
+    assert np.allclose(m.x[0], y)
+    assert np.allclose(m.x[1], y_hat)
     assert np.allclose(m.y, expected)
 
+# --------------------------------------------------------------------------
+# Backward tests
+# --------------------------------------------------------------------------
 
 @pytest.mark.parametrize("reduction", [None, "sum", "mean"])
-def test_gradients_with_dy(reduction):
+def test_backward_exact(reduction):
     m = DummyLoss(reduction=reduction)
-    y = np.array([1.0, 2.0, 3.0])
-    y_hat = np.array([1.5, 1.5, 3.0])
-    m.transform(y, y_hat)
+    m.train()
+    y = np.array([[1.0, 2.0, 3.0]])
+    y_hat = np.array([[1.5, 1.5, 3.0]])
+    m.forward(y, y_hat)
 
-    dy = np.ones_like(y_hat)
-    grad = m.gradients(dy)
+    grad = m.backward()
 
-    base_grad = 2 * (y_hat - y) * dy
+    expected = 2 * (y_hat - y)
     if reduction == "mean":
-        base_grad /= y.shape[0]
+        expected /= y.shape[0]
 
-    assert np.allclose(grad, base_grad)
+    assert np.allclose(grad, expected)
+    assert np.allclose(m.dy, expected)
 
+# --------------------------------------------------------------------------
+# Backward accumulation
+# --------------------------------------------------------------------------
 
-def test_clear_cache_resets():
+def test_backward_accumulation():
     m = DummyLoss(reduction="mean")
-    y = np.array([1.0, 2.0])
-    y_hat = np.array([2.0, 3.0])
-    m.transform(y, y_hat)
+    m.train()
+    y = np.array([[1.0, 2.0]])
+    y_hat = np.array([[2.0, 1.0]])
+    m.forward(y, y_hat)
+
+    grad1 = m.backward()
+    grad2 = m.backward()
+
+    expected_single = 2 * (y_hat - y) / y.shape[0]
+
+    # dy should be overwritten on each backward call, not accumulated
+    assert np.allclose(m.dy, expected_single)
+    assert np.allclose(grad2, expected_single)
+
+# --------------------------------------------------------------------------
+# Train/eval mode caching
+# --------------------------------------------------------------------------
+
+def test_train_eval_mode_caching():
+    y = np.array([[1.0, 2.0]])
+    y_hat = np.array([[2.0, 3.0]])
+
+    m = DummyLoss(reduction="mean")
+    m.train()
+    m.forward(y, y_hat)
+    assert m.x is not None
+    assert m.y is not None
+
+    m.clear()  # clear cache before switching to eval
+    m.eval()
+    m.forward(y, y_hat)
+    assert m.x is None
+    assert m.y is None
+
+# --------------------------------------------------------------------------
+# Clear/reset
+# --------------------------------------------------------------------------
+
+def test_clear_resets():
+    y = np.array([[1.0, 2.0]])
+    y_hat = np.array([[2.0, 3.0]])
+
+    m = DummyLoss(reduction="mean")
+    m.train()
+    m.forward(y, y_hat)
+    m.backward()
+
     m.clear()
     assert m.x is None
     assert m.y is None
+    assert m.dy is None
