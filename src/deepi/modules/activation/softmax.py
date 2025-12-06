@@ -13,6 +13,5 @@ class Softmax(Activation):
         return exp_x / np.sum(exp_x, axis=self.axis, keepdims=True)
 
     def gradients(self, dy: np.ndarray) -> np.ndarray:
-        y = self.y
-        dot = np.sum(y * dy, axis=self.axis, keepdims=True)
-        return y * (dy - dot)
+        dot = np.sum(self.y * dy, axis=self.axis, keepdims=True)
+        return self.y * (dy - dot)

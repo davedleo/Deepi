@@ -10,5 +10,4 @@ class ReLU(Activation):
         return np.maximum(x, 0.0)
     
     def gradients(self, dy: np.ndarray) -> np.ndarray:
-        dx = np.where(self.x > 0.0, 1.0, 0.0) 
-        return dx * dy
+        return dy * (self.x > 0.0)

@@ -10,5 +10,4 @@ class Tanh(Activation):
         return np.tanh(x)
     
     def gradients(self, dy: np.ndarray) -> np.ndarray:
-        dx = (1. - self.dy ** 2.0)
-        return dx * dy
+        return dy * (1.0 - self.y ** 2.0)

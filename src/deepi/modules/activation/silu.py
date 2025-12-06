@@ -7,7 +7,7 @@ class SiLU(Activation):
         super().__init__("silu")
 
     def transform(self, x: np.ndarray) -> np.ndarray:
-        sigmoid_x = np.empty_like(x)
+        sigmoid_x = np.empty_like(x, np.float64)
         mask = x >= 0
         sigmoid_x[mask] = 1.0 / (1.0 + np.exp(-x[mask]))
         sigmoid_x[~mask] = np.exp(x[~mask]) / (1.0 + np.exp(x[~mask]))
@@ -15,9 +15,9 @@ class SiLU(Activation):
 
     def gradients(self, dy: np.ndarray) -> np.ndarray:
         x = self.x
-        sigmoid_x = np.empty_like(x)
+        sigmoid_x = np.empty_like(x, np.float64)
         mask = x >= 0
         sigmoid_x[mask] = 1.0 / (1.0 + np.exp(-x[mask]))
         sigmoid_x[~mask] = np.exp(x[~mask]) / (1.0 + np.exp(x[~mask]))
-        dx = sigmoid_x * (1.0 + x * (1.0 - sigmoid_x))
-        return dx * dy
+        dy_silu = sigmoid_x * (1.0 + x * (1.0 - sigmoid_x))
+        return dy_silu * dy

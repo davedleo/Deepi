@@ -10,5 +10,4 @@ class ReLU6(Activation):
         return np.clip(x, 0.0, 6.0)  
 
     def gradients(self, dy: np.ndarray) -> np.ndarray:
-        dx = np.where((self.x > 0.0) & (self.x < 6.0), 1.0, 0.0)
-        return dx * dy
+        return dy * ((self.x > 0.0) & (self.x < 6.0))
