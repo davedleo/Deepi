@@ -7,9 +7,12 @@ class LeakyReLU(Activation):
         super().__init__("leaky_relu")
         self.alpha = alpha
 
-    def transform(self, x: np.ndarray) -> np.ndarray: 
-        return np.where(x > 0.0, x, x * self.alpha)
+    def transform(self, x: np.ndarray) -> np.ndarray:
+        y = x.copy()
+        y[x < 0.0] *= self.alpha
+        return y
 
     def gradients(self, dy: np.ndarray) -> np.ndarray:
-        mask = self.x > 0.0
-        return dy * mask + dy * (~mask) * self.alpha
+        dy = dy.copy()
+        dy[self.x <= 0.0] *= self.alpha
+        return dy

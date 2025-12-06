@@ -8,8 +8,13 @@ class ELU(Activation):
         self.alpha = alpha
 
     def transform(self, x: np.ndarray) -> np.ndarray:
-        return np.where(x > 0.0, x, self.alpha * np.expm1(x))
+        mask = x <= 0.0
+        y = x.copy()
+        y[mask] = self.alpha * np.expm1(x[mask])
+        return y
 
     def gradients(self, dy: np.ndarray) -> np.ndarray:
-        dx = np.where(self.x > 0.0, 1.0, self.alpha * np.exp(self.x))
-        return dx * dy
+        mask = self.x <= 0.0
+        dy_elu = np.ones_like(dy)
+        dy_elu[mask] = self.alpha * np.exp(self.x[mask])
+        return dy_elu * dy

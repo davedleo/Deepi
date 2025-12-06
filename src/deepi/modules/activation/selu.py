@@ -12,5 +12,5 @@ class SELU(Activation):
         return np.where(x > 0.0, self.scale * x, self.scale * self.alpha * np.expm1(x))
 
     def gradients(self, dy: np.ndarray) -> np.ndarray:
-        dx = np.where(x > 0.0, self.scale, self.scale * self.alpha * np.exp(self.x))
+        dx = np.where(self.x > 0.0, self.scale, self.scale * self.alpha * np.exp(self.x))
         return dx * dy
