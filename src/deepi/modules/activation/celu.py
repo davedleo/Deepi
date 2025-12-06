@@ -8,8 +8,13 @@ class CELU(Activation):
         self.alpha = alpha
 
     def transform(self, x: np.ndarray) -> np.ndarray:
-        return np.where(x > 0.0, x, self.alpha * np.expm1(x / self.alpha))
+        mask = x > 0.0
+        pos = mask * x
+        neg = (~mask) * self.alpha * np.expm1(x / self.alpha)
+        return pos + neg
 
     def gradients(self, dy: np.ndarray) -> np.ndarray:
-        dx = np.where(self.x > 0.0, 1.0, np.exp(self.x / self.alpha))
-        return dx * dy
+        mask = self.x > 0.0
+        dx_pos = mask * 1.0
+        dx_neg = (~mask) * np.exp(self.x / self.alpha)
+        return (dx_pos + dx_neg) * dy

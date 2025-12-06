@@ -10,7 +10,7 @@ def test_forward_exact():
     m = LeakyReLU(alpha=0.01)
     x = np.array([-2.0, -1.0, 0.0, 1.0, 2.0])
     y = m.forward(x)
-    expected = np.where(x > 0.0, x, x * 0.01)
+    expected = np.where(x >= 0.0, x, x * 0.01)
     assert np.allclose(y, expected), "Forward output mismatch with exact formula"
 
 def test_backward_exact():
@@ -20,7 +20,7 @@ def test_backward_exact():
     m.forward(x)
     dy = np.ones_like(x)
     dx = m.gradients(dy)
-    expected_dx = dy * np.where(x > 0.0, 1.0, 0.01)
+    expected_dx = dy * np.where(x >= 0.0, 1.0, 0.01)
     assert np.allclose(dx, expected_dx), "Backward gradients mismatch with exact formula"
 
 def test_backward_accumulation():
@@ -33,7 +33,7 @@ def test_backward_accumulation():
     m.backward(dy1)
     m.backward(dy2)
     total_dy = dy1 + dy2
-    expected_dx = total_dy * np.where(x > 0.0, 1.0, 0.01)
+    expected_dx = total_dy * np.where(x >= 0.0, 1.0, 0.01)
     assert np.allclose(m.gradients(m.dy), expected_dx), "Accumulated gradients incorrect"
 
 def test_eval_mode_no_cache():

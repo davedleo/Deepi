@@ -7,7 +7,8 @@ class ReLU6(Activation):
         super().__init__("relu6")
 
     def transform(self, x: np.ndarray) -> np.ndarray: 
-        return np.clip(x, 0.0, 6.0)  
+        return np.clip(x, 0.0, 6.0)
 
     def gradients(self, dy: np.ndarray) -> np.ndarray:
-        return dy * ((self.x > 0.0) & (self.x < 6.0))
+        mask = (self.x > 0.0) & (self.x < 6.0)
+        return dy * mask

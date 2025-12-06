@@ -9,8 +9,10 @@ class SELU(Activation):
         self.alpha = 1.6732632423543772848170429916717
 
     def transform(self, x: np.ndarray) -> np.ndarray:
-        return np.where(x > 0.0, self.scale * x, self.scale * self.alpha * np.expm1(x))
+        mask = x > 0.0
+        return mask * (self.scale * x) + (~mask) * (self.scale * self.alpha * np.expm1(x))
 
     def gradients(self, dy: np.ndarray) -> np.ndarray:
-        dx = np.where(self.x > 0.0, self.scale, self.scale * self.alpha * np.exp(self.x))
+        mask = self.x > 0.0
+        dx = mask * self.scale + (~mask) * (self.scale * self.alpha * np.exp(self.x))
         return dx * dy

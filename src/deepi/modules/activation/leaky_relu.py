@@ -1,5 +1,5 @@
 import numpy as np
-from deepi.modules.activation import Activation 
+from deepi.modules.activation import Activation
 
 class LeakyReLU(Activation): 
     
@@ -8,11 +8,9 @@ class LeakyReLU(Activation):
         self.alpha = alpha
 
     def transform(self, x: np.ndarray) -> np.ndarray:
-        y = x.copy()
-        y[x < 0.0] *= self.alpha
-        return y
+        mask = x >= 0.0
+        return mask * x + (~mask) * self.alpha * x
 
     def gradients(self, dy: np.ndarray) -> np.ndarray:
-        dy = dy.copy()
-        dy[self.x <= 0.0] *= self.alpha
-        return dy
+        mask = self.x >= 0.0
+        return mask * dy + (~mask) * self.alpha * dy
