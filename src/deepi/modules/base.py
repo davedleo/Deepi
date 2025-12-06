@@ -6,6 +6,7 @@ ArrayOrTuple = Union[np.ndarray, Tuple[np.ndarray, ...]]
 
 
 class Module(ABC):
+    
     def __init__(self, _type: str, _has_params: bool = False):
         self._type = f"module.{_type}"
         self.next: List["Module"] = []

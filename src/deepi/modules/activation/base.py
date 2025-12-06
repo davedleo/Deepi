@@ -6,6 +6,7 @@ from deepi.modules import Module
 
 
 class Activation(Module): 
+    
     def __init__(self, _type: str): 
         super().__init__(f"activation.{_type}", False)
         

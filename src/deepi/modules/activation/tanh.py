@@ -2,6 +2,7 @@ import numpy as np
 from deepi.modules.activation import Activation 
 
 class Tanh(Activation): 
+    
     def __init__(self): 
         super().__init__("tanh")
 
