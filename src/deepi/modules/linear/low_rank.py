@@ -14,6 +14,11 @@ class LowRank(Linear):
         self.params["w1"] = (rank,)
         self.params["w2"] = (rank, out_size)
 
+    def set_input(self, x: np.ndarray): 
+        in_size = x.shape[1]
+        out_size = self.params["w1"][0]
+        self.params["w1"] = (in_size, out_size)
+
     def transform(self, x: np.ndarray) -> np.ndarray: 
         xw1 = x @ self.params["w1"]
         y = xw1 @ self.params["w2"]
@@ -23,7 +28,6 @@ class LowRank(Linear):
 
         return y
 
-    
     def gradients(self, dy: np.ndarray) -> np.ndarray:
         dyw2T = dy @ self.params["w2"].T 
         dy_low_rank = dyw2T @ self.params["w1"].T

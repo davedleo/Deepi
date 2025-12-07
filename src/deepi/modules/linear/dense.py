@@ -12,6 +12,11 @@ class Dense(Linear):
         super().__init__("dense", bias, out_size)
         self.params["w"] = (out_size,)
 
+    def set_input(self, x: np.ndarray): 
+        in_size = x.shape[1]
+        out_size = self.params["w"][0]
+        self.params["w"] = (in_size, out_size)
+
     def transform(self, x: np.ndarray) -> np.ndarray: 
         y = x @ self.params["w"]
 
@@ -20,7 +25,6 @@ class Dense(Linear):
 
         return y
 
-    
     def gradients(self, dy: np.ndarray) -> np.ndarray:
         dy_dense = dy @ self.params["w"].T
 
