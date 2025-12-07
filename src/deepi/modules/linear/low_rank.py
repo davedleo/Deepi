@@ -24,11 +24,9 @@ class LowRank(Linear):
 
     
     def gradients(self, dy: np.ndarray) -> np.ndarray:
-        # gradient w.r.t input
         dyw2T = dy @ self.params["w2"].T 
         dy_low_rank = dyw2T @ self.params["w1"].T
 
-        # gradient w.r.t parameters
         self.grads["w1"] = self.x.T @ dy @ self.params["w2"].T
         self.grads["w2"] = (self.x @ self.params["w1"]).T @ dy
 
