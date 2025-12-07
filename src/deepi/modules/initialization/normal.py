@@ -15,4 +15,4 @@ class Normal(Initializer):
         self.std = std 
 
     def rule(self, shape: Tuple[int, ...]) -> np.ndarray: 
-        return np.random.uniform(self.mean, self.std, shape)
+        return np.random.normal(self.mean, self.std, shape)

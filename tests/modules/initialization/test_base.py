@@ -1,48 +1,114 @@
-import typing
+import numpy as np
+import pytest
+
+from deepi.modules import Module
+from deepi.modules.initialization.base import Initializer
 
 
-class Initializer:
-    def __init__(self, name: str):
-        self.name = name
+# --------------------------------------------------------------------------
+# Dummy Initializer
+# --------------------------------------------------------------------------
 
-    def rule(self, shape: typing.Tuple[int, ...]) -> typing.Any:
-        raise NotImplementedError
+class DummyInit(Initializer):
+    """Simple initializer that returns ones for a given shape."""
 
-    def init(self, module):
-        params = module.get_params()
-        for key, val in params.items():
-            if isinstance(val, tuple):
-                params[key] = self.rule(val)
-            else:
-                params[key] = self.rule(val.shape)
+    def rule(self, shape):
+        return np.ones(shape)
 
-    def fan_in(self, shape: typing.Tuple[int, ...]) -> int:
-        if len(shape) == 2:
-            # Linear layer: (in_features, out_features)
-            return shape[0]
-        elif len(shape) == 3:
-            # Conv1D: (out_channels, in_channels, kernel_size)
-            return shape[1] * shape[2]
-        elif len(shape) == 4:
-            # Conv2D: (out_channels, in_channels, kernel_height, kernel_width)
-            return shape[1] * shape[2] * shape[3]
-        else:
-            raise ValueError(f"Unsupported shape for fan_in: {shape}")
 
-    def fan_out(self, shape: typing.Tuple[int, ...]) -> int:
-        if len(shape) == 2:
-            # Linear layer: (in_features, out_features)
-            return shape[1]
-        elif len(shape) == 3:
-            # Conv1D: (out_channels, in_channels, kernel_size)
-            return shape[0] * shape[2]
-        elif len(shape) == 4:
-            # Conv2D: (out_channels, in_channels, kernel_height, kernel_width)
-            return shape[0] * shape[2] * shape[3]
-        else:
-            raise ValueError(f"Unsupported shape for fan_out: {shape}")
+# --------------------------------------------------------------------------
+# Dummy Module with parameters
+# --------------------------------------------------------------------------
 
-    def __str__(self) -> str:
-        return f"Initializer.{self.__class__.__name__}"
+class DummyParam(Module):
+    def __init__(self, shape=(3,)):
+        super().__init__("dummy.param", _has_params=True)
+        self.params = {"w": shape}  # shape tuple before init
+        self.grads = {"w": shape}
 
-    __repr__ = __str__
+    def get_params(self):
+        return self.params
+
+    def transform(self, x):
+        return x + self.params["w"]
+
+    def gradients(self, dy):
+        self.grads["w"] = np.sum(dy, axis=0)
+        return dy
+
+
+# --------------------------------------------------------------------------
+# Tests
+# --------------------------------------------------------------------------
+
+def test_rule_returns_array_of_ones():
+    init = DummyInit("dummy")
+    shape = (2, 3)
+    arr = init.rule(shape)
+    assert isinstance(arr, np.ndarray)
+    assert arr.shape == shape
+    assert np.all(arr == 1.0)
+
+
+def test_init_replaces_shapes_with_arrays():
+    init = DummyInit("dummy")
+    m = DummyParam(shape=(2, 2))
+    # Before init, params are tuples
+    assert m.params["w"] == (2, 2)
+    init.init(m)
+    # After init, params are arrays of ones
+    assert isinstance(m.params["w"], np.ndarray)
+    assert m.params["w"].shape == (2, 2)
+    assert np.all(m.params["w"] == 1.0)
+
+
+def test_str_and_repr():
+    init = DummyInit("dummy")
+    s = str(init)
+    r = repr(init)
+    assert s == "Initializer.Dummy"
+    assert r == "Initializer.Dummy"
+    assert s == r
+
+
+def test_fan_in_and_fan_out_linear():
+    init = DummyInit("dummy")
+    shape = (5, 10)
+    assert init.fan_in(shape) == 5
+    assert init.fan_out(shape) == 10
+
+
+def test_fan_in_and_fan_out_conv1d():
+    init = DummyInit("dummy")
+    shape = (16, 3, 7)
+    assert init.fan_in(shape) == 3 * 7
+    assert init.fan_out(shape) == 16 * 7
+
+
+def test_fan_in_and_fan_out_conv2d():
+    init = DummyInit("dummy")
+    shape = (32, 3, 5, 5)
+    assert init.fan_in(shape) == 3 * 5 * 5
+    assert init.fan_out(shape) == 32 * 5 * 5
+
+
+def test_init_no_params_does_nothing():
+    class NoParam(Module):
+        def __init__(self):
+            super().__init__("noparam")
+            self.params = {}
+            self.grads = {}
+
+        def get_params(self):
+            return self.params
+
+        def transform(self, x):
+            return x
+
+        def gradients(self, dy):
+            return dy
+
+    init = DummyInit("dummy")
+    m = NoParam()
+    init.init(m)
+    assert m.params == {}
