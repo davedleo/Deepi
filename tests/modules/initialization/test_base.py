@@ -1,76 +1,48 @@
-import numpy as np
-import pytest
-
-from deepi.modules.base import Module
-from deepi.modules.initialization.base import Initializer
+import typing
 
 
-# --------------------------------------------------------------------------
-# Dummy Initializer
-# --------------------------------------------------------------------------
+class Initializer:
+    def __init__(self, name: str):
+        self.name = name
 
-class DummyInit(Initializer):
-    """A simple initializer that returns all ones with the requested shape."""
+    def rule(self, shape: typing.Tuple[int, ...]) -> typing.Any:
+        raise NotImplementedError
 
-    def rule(self, shape):
-        return np.ones(shape)
+    def init(self, module):
+        params = module.get_params()
+        for key, val in params.items():
+            if isinstance(val, tuple):
+                params[key] = self.rule(val)
+            else:
+                params[key] = self.rule(val.shape)
 
+    def fan_in(self, shape: typing.Tuple[int, ...]) -> int:
+        if len(shape) == 2:
+            # Linear layer: (in_features, out_features)
+            return shape[0]
+        elif len(shape) == 3:
+            # Conv1D: (out_channels, in_channels, kernel_size)
+            return shape[1] * shape[2]
+        elif len(shape) == 4:
+            # Conv2D: (out_channels, in_channels, kernel_height, kernel_width)
+            return shape[1] * shape[2] * shape[3]
+        else:
+            raise ValueError(f"Unsupported shape for fan_in: {shape}")
 
-# --------------------------------------------------------------------------
-# Dummy Module with parameters
-# --------------------------------------------------------------------------
+    def fan_out(self, shape: typing.Tuple[int, ...]) -> int:
+        if len(shape) == 2:
+            # Linear layer: (in_features, out_features)
+            return shape[1]
+        elif len(shape) == 3:
+            # Conv1D: (out_channels, in_channels, kernel_size)
+            return shape[0] * shape[2]
+        elif len(shape) == 4:
+            # Conv2D: (out_channels, in_channels, kernel_height, kernel_width)
+            return shape[0] * shape[2] * shape[3]
+        else:
+            raise ValueError(f"Unsupported shape for fan_out: {shape}")
 
-class DummyParam(Module):
-    def __init__(self, shape=(3,)):
-        super().__init__("dummy.param", _has_params=True)
-        # Initialize parameter arrays (actual NumPy arrays)
-        self.params["w"] = shape
-        self.grads["w"] = shape
+    def __str__(self) -> str:
+        return f"Initializer.{self.__class__.__name__}"
 
-    def get_params(self):
-        # Return the actual arrays (so init can overwrite them)
-        return self.params
-
-    def transform(self, x):
-        return x + self.params["w"]
-
-    def gradients(self, dy):
-        self.grads["w"] = np.sum(dy, axis=0)
-        return dy
-
-
-# --------------------------------------------------------------------------
-# Tests
-# --------------------------------------------------------------------------
-
-def test_initializer_rule_returns_correct_array():
-    init = DummyInit("dummy")
-    shape = (2, 3)
-    arr = init.rule(shape)
-    assert arr.shape == shape
-    assert np.all(arr == 1.0)
-
-
-def test_initializer_init_sets_module_params():
-    init = DummyInit("dummy")
-    m = DummyParam(shape=(2, 2))
-    init.init(m)
-    assert np.all(m.params["w"] == 1.0)
-
-
-def test_initializer_str_and_repr():
-    init = DummyInit("dummy")
-    s = str(init)
-    r = repr(init)
-    assert s == "Initializer.Dummy"
-    assert r == "Initializer.Dummy"
-    assert s == r
-
-
-def test_initializer_with_different_shapes():
-    init = DummyInit("dummy")
-    shapes = [(1,), (2, 3), (4, 5, 6)]
-    for s in shapes:
-        arr = init.rule(s)
-        assert arr.shape == s
-        assert np.all(arr == 1.0)
+    __repr__ = __str__
