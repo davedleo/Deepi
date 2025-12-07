@@ -1,6 +1,7 @@
 import numpy as np
 from deepi.modules.linear import Linear 
 
+
 class LowRank(Linear): 
     
     def __init__(

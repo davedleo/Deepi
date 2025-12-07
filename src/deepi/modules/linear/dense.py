@@ -1,6 +1,7 @@
 import numpy as np
 from deepi.modules.linear import Linear 
 
+
 class Dense(Linear): 
     
     def __init__(
@@ -22,7 +23,7 @@ class Dense(Linear):
     
     def gradients(self, dy: np.ndarray) -> np.ndarray:
         dy_dense = dy @ self.params["w"].T
-        
+
         self.grads["w"] = self.x.T @ dy
 
         if self._has_bias: 
