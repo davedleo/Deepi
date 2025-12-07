@@ -9,6 +9,7 @@ class Module(ABC):
     
     def __init__(self, _type: str, _has_params: bool = False):
         self._type = f"module.{_type}"
+        self._has_params = _has_params
         self.next: List["Module"] = []
         self.prev: List["Module"] = []
 
@@ -17,7 +18,6 @@ class Module(ABC):
         self.dy: Optional[ArrayOrTuple] = None
 
         self._is_training: bool = False
-        self._has_params = _has_params
         self.params: Dict[str, np.ndarray] = dict()
         self.grads: Dict[str, np.ndarray] = dict()
 
@@ -103,8 +103,16 @@ class Module(ABC):
         self.x = None
         self.y = None
         self.dy = None
-        if self._has_params:
-            self.grads = dict()
+        if self.has_params:
+            self.grads = {}
+
+    @property
+    def type(self) -> str:
+        return self._type
+
+    @property
+    def has_params(self) -> bool:
+        return self._has_params
 
     def __str__(self) -> str:
         parts = self._type.split(".")
