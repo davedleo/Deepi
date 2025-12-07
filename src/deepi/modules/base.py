@@ -92,6 +92,10 @@ class Module(ABC):
         for k, v in params.items():
             self.params[k] = v
 
+    def set_input(self, **x):
+        """Input setup: set input shape for the current module"""
+        pass
+
     def train(self):
         self._is_training = True
 
