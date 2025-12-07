@@ -18,8 +18,9 @@ class Initializer(ABC):
     def init(self, module: Module):
         if module.has_params:
             params = module.get_params()
-            for k, shape in params.items():
-                params[k] = self.rule(shape)
+            for k, v in params.items():
+                if isinstance(v, tuple):
+                    params[k] = self.rule(v)
 
     def fan_in(self, shape: Tuple[int, ...]) -> int:
         if len(shape) == 2:
