@@ -8,8 +8,10 @@ class Concatenate(Flow):
         super().__init__("concatenate")
         self.axis = axis
 
-    def transform(self, x: Tuple[np.ndarray, ...]) -> np.ndarray: 
-        return 
+    def transform(self, xs: Tuple[np.ndarray, ...]) -> np.ndarray: 
+        return np.concatenate(xs, axis=self.axis)
     
-    def gradients(self, dy: np.ndarray) -> np.ndarray:
-        return 
+    def gradients(self, dy: np.ndarray) -> Tuple[np.ndarray, ...]:
+        sizes = [x.shape[self.axis] for x in self.x]
+        splits = np.split(dy, np.cumsum(sizes)[:-1], axis=self.axis)
+        return tuple(splits)
