@@ -13,4 +13,5 @@ class Reshape(Flow):
         return x.reshape(out_shape)
     
     def gradients(self, dy: np.ndarray) -> np.ndarray:
-        return dy.reshape(self.x.shape)
+        dy_shape = dy.shape[:1] + self.x.shape[1:]
+        return dy.reshape(dy_shape)
