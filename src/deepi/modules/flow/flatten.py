@@ -1,6 +1,7 @@
 import numpy as np
 from deepi.modules.flow import Flow 
 
+
 class Flatten(Flow): 
     
     def __init__(self): 

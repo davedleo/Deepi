@@ -1,3 +1,5 @@
 from .base import Module
 from .activation import *
-from .loss import * 
+from .flow import *
+from .linear import *
+from .loss import *  

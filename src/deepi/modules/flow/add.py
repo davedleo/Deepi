@@ -2,6 +2,7 @@ import numpy as np
 from typing import Tuple
 from deepi.modules.flow import Flow  
 
+
 class Add(Flow): 
     
     def __init__(self): 
