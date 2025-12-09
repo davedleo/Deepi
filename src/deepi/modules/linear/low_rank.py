@@ -1,4 +1,5 @@
 import numpy as np
+from typing import Dict, Tuple
 from deepi.modules.linear import Linear 
 
 
@@ -28,14 +29,16 @@ class LowRank(Linear):
 
         return y
 
-    def gradients(self, dy: np.ndarray) -> np.ndarray:
-        dyw2T = dy @ self.params["w2"].T 
+    def gradients(self, dy: np.ndarray) -> Tuple[np.ndarray, Dict[str, np.ndarray]]:
+        xw1 = self.x @ self.params["w1"]
+        dyw2T = dy @ self.params["w2"].T
         dy_low_rank = dyw2T @ self.params["w1"].T
 
-        self.grads["w1"] = self.x.T @ dy @ self.params["w2"].T
-        self.grads["w2"] = (self.x @ self.params["w1"]).T @ dy
+        grads = {}
+        grads["w1"] = self.x.T @ dyw2T
+        grads["w2"] = xw1.T @ dy
 
-        if self._has_bias: 
-            self.grads["b"] = dy.sum(axis=0, keepdims=True)
+        if self._has_bias:
+            grads["b"] = dy.sum(axis=0, keepdims=True)
 
-        return dy_low_rank
+        return dy_low_rank, grads

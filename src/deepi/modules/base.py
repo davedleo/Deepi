@@ -1,4 +1,5 @@
-from abc import ABC, abstractmethod
+from abc import ABC, abstractmethod 
+from collections import defaultdict
 from typing import Dict, List, Optional, Tuple, Union
 import numpy as np
 
@@ -19,7 +20,7 @@ class Module(ABC):
 
         self._is_training: bool = False
         self.params: Dict[str, np.ndarray] = dict()
-        self.grads: Dict[str, np.ndarray] = dict()
+        self.grads: Dict[str, np.ndarray] = defaultdict(lambda: None)
 
     @abstractmethod
     def transform(self, x: ArrayOrTuple) -> ArrayOrTuple:
@@ -68,7 +69,16 @@ class Module(ABC):
                 raise TypeError("Mismatched dy types when accumulating gradients")
 
         # Compute gradient(s) to propagate upstream
-        dx = self.gradients(self.dy)
+        gradients = self.gradients(dy_copy)
+        if self._has_params: 
+            dx, grads = gradients 
+            for k, v in grads.items():
+                if self.grads[k] is None:
+                    self.grads[k] = np.zeros_like(v)
+                self.grads[k] += v
+
+        else: 
+            dx = gradients
 
         # Propagate upstream according to dx shape
         if isinstance(dx, tuple):
@@ -103,12 +113,11 @@ class Module(ABC):
         self._is_training = False
 
     def clear(self):
-        """Clear cached values and gradients."""
         self.x = None
         self.y = None
         self.dy = None
-        if self.has_params:
-            self.grads = {}
+        if self._has_params:
+            self.grads = {k: np.zeros_like(v) for k, v in self.params.items()}
 
     @property
     def type(self) -> str:
