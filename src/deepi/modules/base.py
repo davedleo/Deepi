@@ -28,7 +28,7 @@ class Module(ABC):
         pass
 
     @abstractmethod
-    def gradients(self, dy: ArrayOrTuple) -> ArrayOrTuple:
+    def gradients(self, dy: ArrayOrTuple) -> Union[ArrayOrTuple, Tuple[np.ndarray, Dict[str, np.ndarray]]]:
         """Backward computation: returns gradient(s) w.r.t inputs."""
         pass
 
