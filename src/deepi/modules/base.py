@@ -100,7 +100,7 @@ class Module(ABC):
 
     def load_params(self, params: Dict[str, np.ndarray]):
         for k, v in params.items():
-            self.params[k] = v
+            self.params[k] = v.copy()
 
     def set_input(self, **x):
         """Input setup: set input shape for the current module"""
