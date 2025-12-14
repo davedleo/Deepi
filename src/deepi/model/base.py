@@ -1,4 +1,6 @@
+from abc import ABC, abstractmethod
 from typing import Dict, List, Optional, Union, Tuple
+
 import numpy as np
 
 from deepi.modules import Input, Module
@@ -7,57 +9,49 @@ from deepi.modules.initialization import Initializer, KaimingUniform
 ArrayOrTuple = Union[np.ndarray, Tuple[np.ndarray, ...]]
 
 
-class Model:
+class Model(ABC): 
+
     def __init__(
-        self,
-        inputs: Union[Input, List[Input]],
-        outputs: Union[Module, List[Module]],
-        initializer: Optional[Initializer] = None
-    ):
-        if isinstance(inputs, Input):
-            inputs = [inputs]
-        if isinstance(outputs, Module):
-            outputs = [outputs]
+            self, 
+            _type: str,
+            inputs: Union[Input, List[Input]],
+            outputs: Union[Module, List[Module]],
+            initializer: Optional[Initializer] = None
+    ): 
+        self._type = f"model.{_type}"
 
-        self.inputs = inputs
-        self.outputs = outputs
-        self.initializer = KaimingUniform() if initializer is None else initializer
+        self.inputs: Union[Input, List[Input]] = inputs
+        self.outputs: Union[Input, List[Module]] = outputs
+        self.modules: List[Module] = []
 
-        self._build()
-
-    # --------------------------------------------------------------
-    # Topology & module mapping
-    # --------------------------------------------------------------
-    def _build(self):
-        visited = set()
-        topo: List[Module] = []
-
-        def dfs(m: Module):
-            if m in visited:
-                return
-            visited.add(m)
-            for p in m.prev:
-                dfs(p)
-            topo.append(m)
-
-        for out in self.outputs:
-            dfs(out)
-
-        # Ensure all inputs are included
-        for inp in self.inputs:
-            if inp not in visited:
-                dfs(inp)
-
-        self._topo = topo
-        self.modules = topo
-        self._init_params()
+        self.build(inputs, outputs)
         self._map_modules()
+
+        if initializer is None: 
+            initializer = KaimingUniform()
+
+        self._init_params(initializer)
+
+    @abstractmethod 
+    def build(
+            self,
+            inputs: Union[Input, List[Input]],
+            outputs: Union[Module, List[Module]],
+    ): 
+        pass
+
+    @abstractmethod 
+    def forward(
+            self,
+            x: ArrayOrTuple
+    ) -> ArrayOrTuple: 
+        pass
 
     def _map_modules(self):
         self.module_map: Dict[str, Module] = {}
         counts: Dict[str, int] = {}
 
-        for m in self._topo:
+        for m in self.modules:
             base = type(m).__name__
             idx = counts.get(base, 0)
             counts[base] = idx + 1
@@ -67,14 +61,13 @@ class Model:
     def _init_params(self):
         self.clear()
         self.eval()
-        buffers = {m: [] for m in self._topo}
+        buffers = {m: [] for m in self.modules}
 
-        # Generate dummy inputs
         for inp in self.inputs:
             sample = inp.generate_sample()
             buffers[inp].append(sample)
 
-        for m in self._topo:
+        for m in self.modules:
             if isinstance(m, Input):
                 xi = buffers[m][0]
             else:
@@ -102,14 +95,11 @@ class Model:
                     buffers[child].append(yi)
 
         # Clear buffers
-        for m in self._topo:
+        for m in self.modules:
             buffers[m] = []
 
         self.eval()
 
-    # --------------------------------------------------------------
-    # Parameter management
-    # --------------------------------------------------------------
     def get_params(self) -> Dict[str, Dict[str, np.ndarray]]:
         state: Dict[str, Dict[str, np.ndarray]] = {}
         for name, m in self.module_map.items():
@@ -124,9 +114,6 @@ class Model:
                 if m.has_params:
                     m.load_params(params)
 
-    # --------------------------------------------------------------
-    # Modes
-    # --------------------------------------------------------------
     def train(self):
         for m in self.modules:
             m.train()
@@ -139,46 +126,6 @@ class Model:
         for m in self.modules:
             m.clear()
 
-    # --------------------------------------------------------------
-    # Forward pass
-    # --------------------------------------------------------------
-    def forward(self, x: ArrayOrTuple) -> ArrayOrTuple:
-        buffers: Dict[Module, List[np.ndarray]] = {m: [] for m in self.modules}
-
-        # Feed inputs
-        if len(self.inputs) == 1:
-            buffers[self.inputs[0]].append(x)
-        else:
-            for inp, xi in zip(self.inputs, x):
-                buffers[inp].append(xi)
-
-        # Topological execution
-        for m in self._topo:
-            if isinstance(m, Input):
-                xi = buffers[m][0]
-            else:
-                xs = buffers[m]
-                if len(xs) == 1:
-                    xi = xs[0]
-                else:
-                    xi = tuple(xs)
-
-            # Normalize single-input modules
-            if len(m.prev) == 1 and isinstance(xi, tuple):
-                xi = xi[0]
-
-            yi = m.forward(xi)
-
-            # Dispatch outputs
-            if isinstance(yi, tuple):
-                for child, yj in zip(m.next, yi):
-                    buffers[child].append(yj)
-            else:
-                for child in m.next:
-                    buffers[child].append(yi)
-
-        # Collect outputs
-        if len(self.outputs) == 1:
-            return buffers[self.outputs[0]][-1]
-        else:
-            return tuple(buffers[o][-1] for o in self.outputs)
+    @property 
+    def type(self) -> str: 
+        return self._type
