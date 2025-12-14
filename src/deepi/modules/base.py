@@ -20,7 +20,7 @@ class Module(ABC):
 
         self._is_training: bool = False
         self.params: Dict[str, np.ndarray] = dict()
-        self.grads: Dict[str, np.ndarray] = defaultdict(lambda: None)
+        self.grads: Dict[str, np.ndarray] = defaultdict(lambda: 0.0)
 
     @abstractmethod
     def transform(self, x: ArrayOrTuple) -> ArrayOrTuple:
@@ -75,6 +75,7 @@ class Module(ABC):
             for k, v in grads.items():
                 if self.grads[k] is None:
                     self.grads[k] = np.zeros_like(v)
+
                 self.grads[k] += v
 
         else: 
@@ -102,9 +103,9 @@ class Module(ABC):
         for k, v in params.items():
             self.params[k] = v.copy()
 
-    def set_input(self, **x):
+    def set_input(self, x: ArrayOrTuple):
         """Input setup: set input shape for the current module"""
-        pass
+        return
 
     def train(self):
         self._is_training = True
@@ -117,7 +118,7 @@ class Module(ABC):
         self.y = None
         self.dy = None
         if self._has_params:
-            self.grads = {k: np.zeros_like(v) for k, v in self.params.items()}
+            self.grads = defaultdict(lambda: 0.0)
 
     @property
     def type(self) -> str:

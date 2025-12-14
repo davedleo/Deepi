@@ -19,8 +19,10 @@ class Loss(Module):
         super().__init__(f"loss.{_type}", False)
         if reduction not in _REDUCTIONS:
             raise ValueError()
-
         self.reduction = reduction
+
+        del self.next
+        self.prev: Optional[Module] = None
 
     @abstractmethod
     def transform(self, y_hat: np.ndarray, y: np.ndarray) -> np.ndarray:
@@ -31,6 +33,9 @@ class Loss(Module):
     def gradients(self, y_hat: np.ndarray, y: np.ndarray) -> np.ndarray:
         """Compute gradients of the loss."""
         pass
+
+    def link(self, module: Module): 
+        self.prev = module
 
     def apply_reduction(self, loss: np.ndarray) -> np.ndarray:
         """Apply reduction to loss tensor."""
@@ -51,7 +56,7 @@ class Loss(Module):
 
         return loss
 
-    def backward(self) -> np.ndarray:
+    def backward(self, return_gradient: bool = True) -> np.ndarray:
         y_hat, y = self.x
         gradient = self.gradients(y_hat, y)
         if self.reduction and self.reduction == "mean":
@@ -59,7 +64,8 @@ class Loss(Module):
 
         self.dy = gradient
 
-        for prev_module in self.prev:
-            prev_module.backward(gradient)
+        if self.prev is not None: 
+            self.prev.backward(gradient)
 
-        return gradient
+        if return_gradient:
+            return gradient
