@@ -35,7 +35,7 @@ class Loss(Module):
         pass
 
     def link(self, module: Module): 
-        self.prev = module
+        pass
 
     def apply_reduction(self, loss: np.ndarray) -> np.ndarray:
         """Apply reduction to loss tensor."""

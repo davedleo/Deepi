@@ -90,11 +90,14 @@ class Module(ABC):
                 prev_module.backward(dx)
 
     def link(self, module: "Module"):
-        """Link this module to the next module in the graph."""
-        if module not in self.next:
-            self.next.append(module)
-        if self not in module.prev:
-            module.prev.append(self)
+        if module.type.startswith("module.loss"): 
+            module.prev = self
+
+        else:
+            if module not in self.next:
+                self.next.append(module)
+            if self not in module.prev:
+                module.prev.append(self)
 
     def get_params(self) -> Dict[str, np.ndarray]:
         return self.params
