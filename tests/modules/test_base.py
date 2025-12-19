@@ -57,8 +57,8 @@ class DummyParam(Module):
         return x + self.params["w"]
 
     def gradients(self, dy: ArrayOrTuple):
-        self.grads["w"] = np.sum(dy, axis=0)
-        return dy
+        grads = {"w": dy.sum(axis=0)}
+        return dy, grads
 
 
 class Identity(Module):
@@ -252,6 +252,7 @@ def test_clear_resets_all():
     assert m.x is None
     assert m.y is None
     assert m.dy is None
+    assert len(m.grads) == 0
 
 
 def test_string_and_repr():

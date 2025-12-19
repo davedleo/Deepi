@@ -33,35 +33,35 @@ def test_backward_no_bias():
     x = np.array([[1.0, 2.0, 3.0]])
     m.x = x
     dy = np.array([[1.0, -1.0]])
-    dx = m.gradients(dy)
+    dx, grads = m.gradients(dy)
     expected_dx = dy @ m.params["w"].T
     expected_dw = x.T @ dy
     np.testing.assert_array_equal(dx, expected_dx)
-    np.testing.assert_array_equal(m.grads["w"], expected_dw)
-    assert "b" not in m.grads
+    np.testing.assert_array_equal(grads["w"], expected_dw)
+    assert "b" not in grads
 
 def test_backward_with_bias():
     m = make_dense(input_size=3, output_size=2, bias=True)
     x = np.array([[1.0, 2.0, 3.0]])
     m.x = x
     dy = np.array([[1.0, -1.0]])
-    dx = m.gradients(dy)
+    dx, grads = m.gradients(dy)
     expected_dx = dy @ m.params["w"].T
     expected_dw = x.T @ dy
     expected_db = dy.sum(axis=0, keepdims=True)
     np.testing.assert_array_equal(dx, expected_dx)
-    np.testing.assert_array_equal(m.grads["w"], expected_dw)
-    np.testing.assert_array_equal(m.grads["b"], expected_db)
+    np.testing.assert_array_equal(grads["w"], expected_dw)
+    np.testing.assert_array_equal(grads["b"], expected_db)
 
 def test_backward_multiple_samples():
     m = make_dense(input_size=2, output_size=2, bias=True)
     x = np.array([[1, 2], [3, 4]])
     m.x = x
     dy = np.array([[1, -1], [0.5, 0.5]])
-    dx = m.gradients(dy)
+    dx, grads = m.gradients(dy)
     expected_dx = dy @ m.params["w"].T
     expected_dw = x.T @ dy
     expected_db = dy.sum(axis=0, keepdims=True)
     np.testing.assert_array_equal(dx, expected_dx)
-    np.testing.assert_array_equal(m.grads["w"], expected_dw)
-    np.testing.assert_array_equal(m.grads["b"], expected_db)
+    np.testing.assert_array_equal(grads["w"], expected_dw)
+    np.testing.assert_array_equal(grads["b"], expected_db)

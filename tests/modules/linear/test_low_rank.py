@@ -34,23 +34,23 @@ def test_backward_no_bias():
     x = np.array([[1.0, 2.0, 3.0]])
     m.x = x
     dy = np.array([[1.0, -1.0]])
-    dx = m.gradients(dy)
+    dx, grads = m.gradients(dy)
 
     expected_dx = dy @ m.params["w2"].T @ m.params["w1"].T
     expected_dw1 = x.T @ dy @ m.params["w2"].T
     expected_dw2 = (x @ m.params["w1"]).T @ dy
 
     np.testing.assert_array_equal(dx, expected_dx)
-    np.testing.assert_array_equal(m.grads["w1"], expected_dw1)
-    np.testing.assert_array_equal(m.grads["w2"], expected_dw2)
-    assert "b" not in m.grads
+    np.testing.assert_array_equal(grads["w1"], expected_dw1)
+    np.testing.assert_array_equal(grads["w2"], expected_dw2)
+    assert "b" not in grads
 
 def test_backward_with_bias():
     m = make_low_rank(input_size=3, out_size=2, rank=2, bias=True)
     x = np.array([[1.0, 2.0, 3.0]])
     m.x = x
     dy = np.array([[1.0, -1.0]])
-    dx = m.gradients(dy)
+    dx, grads = m.gradients(dy)
 
     expected_dx = dy @ m.params["w2"].T @ m.params["w1"].T
     expected_dw1 = x.T @ dy @ m.params["w2"].T
@@ -58,16 +58,16 @@ def test_backward_with_bias():
     expected_db = dy.sum(axis=0, keepdims=True)
 
     np.testing.assert_array_equal(dx, expected_dx)
-    np.testing.assert_array_equal(m.grads["w1"], expected_dw1)
-    np.testing.assert_array_equal(m.grads["w2"], expected_dw2)
-    np.testing.assert_array_equal(m.grads["b"], expected_db)
+    np.testing.assert_array_equal(grads["w1"], expected_dw1)
+    np.testing.assert_array_equal(grads["w2"], expected_dw2)
+    np.testing.assert_array_equal(grads["b"], expected_db)
 
 def test_backward_multiple_samples():
     m = make_low_rank(input_size=2, out_size=2, rank=2, bias=True)
     x = np.array([[1, 2], [3, 4]])
     m.x = x
     dy = np.array([[1, -1], [0.5, 0.5]])
-    dx = m.gradients(dy)
+    dx, grads = m.gradients(dy)
 
     expected_dx = dy @ m.params["w2"].T @ m.params["w1"].T
     expected_dw1 = x.T @ dy @ m.params["w2"].T
@@ -75,6 +75,6 @@ def test_backward_multiple_samples():
     expected_db = dy.sum(axis=0, keepdims=True)
 
     np.testing.assert_array_equal(dx, expected_dx)
-    np.testing.assert_array_equal(m.grads["w1"], expected_dw1)
-    np.testing.assert_array_equal(m.grads["w2"], expected_dw2)
-    np.testing.assert_array_equal(m.grads["b"], expected_db)
+    np.testing.assert_array_equal(grads["w1"], expected_dw1)
+    np.testing.assert_array_equal(grads["w2"], expected_dw2)
+    np.testing.assert_array_equal(grads["b"], expected_db)

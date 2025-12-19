@@ -1,4 +1,5 @@
-from abc import ABC, abstractmethod
+from abc import ABC, abstractmethod 
+from collections import defaultdict
 from typing import Dict, List, Optional, Tuple, Union
 import numpy as np
 
@@ -19,7 +20,7 @@ class Module(ABC):
 
         self._is_training: bool = False
         self.params: Dict[str, np.ndarray] = dict()
-        self.grads: Dict[str, np.ndarray] = dict()
+        self.grads: Dict[str, np.ndarray] = defaultdict(lambda: 0.0)
 
     @abstractmethod
     def transform(self, x: ArrayOrTuple) -> ArrayOrTuple:
@@ -27,7 +28,7 @@ class Module(ABC):
         pass
 
     @abstractmethod
-    def gradients(self, dy: ArrayOrTuple) -> ArrayOrTuple:
+    def gradients(self, dy: ArrayOrTuple) -> Union[ArrayOrTuple, Tuple[np.ndarray, Dict[str, np.ndarray]]]:
         """Backward computation: returns gradient(s) w.r.t inputs."""
         pass
 
@@ -68,7 +69,17 @@ class Module(ABC):
                 raise TypeError("Mismatched dy types when accumulating gradients")
 
         # Compute gradient(s) to propagate upstream
-        dx = self.gradients(self.dy)
+        gradients = self.gradients(dy_copy)
+        if self._has_params: 
+            dx, grads = gradients 
+            for k, v in grads.items():
+                if self.grads[k] is None:
+                    self.grads[k] = np.zeros_like(v)
+
+                self.grads[k] += v
+
+        else: 
+            dx = gradients
 
         # Propagate upstream according to dx shape
         if isinstance(dx, tuple):
@@ -79,22 +90,25 @@ class Module(ABC):
                 prev_module.backward(dx)
 
     def link(self, module: "Module"):
-        """Link this module to the next module in the graph."""
-        if module not in self.next:
-            self.next.append(module)
-        if self not in module.prev:
-            module.prev.append(self)
+        if module.type.startswith("module.loss"): 
+            module.prev = self
+
+        else:
+            if module not in self.next:
+                self.next.append(module)
+            if self not in module.prev:
+                module.prev.append(self)
 
     def get_params(self) -> Dict[str, np.ndarray]:
         return self.params
 
     def load_params(self, params: Dict[str, np.ndarray]):
         for k, v in params.items():
-            self.params[k] = v
+            self.params[k] = v.copy()
 
-    def set_input(self, **x):
+    def set_input(self, x: ArrayOrTuple):
         """Input setup: set input shape for the current module"""
-        pass
+        return
 
     def train(self):
         self._is_training = True
@@ -103,12 +117,11 @@ class Module(ABC):
         self._is_training = False
 
     def clear(self):
-        """Clear cached values and gradients."""
         self.x = None
         self.y = None
         self.dy = None
-        if self.has_params:
-            self.grads = {}
+        if self._has_params:
+            self.grads = defaultdict(lambda: 0.0)
 
     @property
     def type(self) -> str:

@@ -1,7 +1,6 @@
 import numpy as np
 from typing import Tuple
 from deepi.modules.flow import Flow
-from deepi.modules import Module
 
 
 class Input(Flow): 
@@ -18,7 +17,3 @@ class Input(Flow):
     
     def gradients(self, dy: np.ndarray):
         return
-    
-    def link(self, module: "Module"):
-        if module not in self.next:
-            self.next.append(module)

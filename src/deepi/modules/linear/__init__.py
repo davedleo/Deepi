@@ -4,5 +4,6 @@ from .low_rank import LowRank
 
 __all__ = [
     "Linear",
-    "Dense"
+    "Dense",
+    "LowRank"
 ]

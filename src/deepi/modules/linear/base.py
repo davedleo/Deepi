@@ -1,4 +1,5 @@
 from abc import abstractmethod 
+from typing import Dict, Tuple
 
 import numpy as np  
 
@@ -23,5 +24,5 @@ class Linear(Module):
         pass 
 
     @abstractmethod 
-    def gradients(self, dy: np.ndarray) -> np.ndarray: 
+    def gradients(self, dy: np.ndarray) -> Tuple[np.ndarray, Dict[str, np.ndarray]]: 
         pass
