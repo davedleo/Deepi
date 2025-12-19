@@ -115,7 +115,7 @@ class Model:
         Create a mapping from unique module names to module instances.
         Names are generated based on module class name and occurrence count.
         """
-        self.module_map: Dict[str, Module] = {}
+        self.modules_map: Dict[str, Module] = {}
         module_counts: Dict[str, int] = {}
 
         for module in self.modules:
@@ -123,7 +123,7 @@ class Model:
             count = module_counts.get(base_name, 0)
             module_counts[base_name] = count + 1
             unique_name = f"{base_name}_{count}"
-            self.module_map[unique_name] = module
+            self.modules_map[unique_name] = module
 
     def forward(self, x: ArrayOrTuple) -> ArrayOrTuple:
         """
@@ -131,6 +131,7 @@ class Model:
         Supports single or multiple inputs.
         """
         buffers: Dict[Module, List[np.ndarray]] = {module: [] for module in self.modules}
+        outputs_buffer: Dict[Module, np.ndarray] = {}
 
         # Feed inputs into the buffers
         if len(self.inputs) == 1:
@@ -151,11 +152,8 @@ class Model:
                 else:
                     module_input = tuple(module_inputs)
 
-            # Unwrap single tuple input if there is only one previous module
-            if len(module.prev) == 1 and isinstance(module_input, tuple):
-                module_input = module_input[0]
-
             module_output = module.forward(module_input)
+            outputs_buffer[module] = module_output
 
             # Distribute outputs to next modules
             if isinstance(module_output, tuple):
@@ -167,9 +165,26 @@ class Model:
 
         # Collect outputs from the output modules
         if len(self.outputs) == 1:
-            return buffers[self.outputs[0]][0]
+            return outputs_buffer[self.outputs[0]]
 
-        return tuple(buffers[output_module][0] for output_module in self.outputs)
+        return tuple(outputs_buffer[output_module] for output_module in self.outputs)
+
+    def backward(self, dy: ArrayOrTuple):
+        """
+        Perform a backward pass through the model given output gradient dy.
+        Backpropagation is triggered from the output modules and is assumed
+        to propagate internally through the graph.
+        """
+        if len(self.outputs) == 1:
+            self.outputs[0].backward(dy)
+
+        # Multiple outputs require tuple gradient input
+        elif isinstance(dy, tuple): 
+            for output_module, grad in zip(self.outputs, dy):
+                output_module.backward(grad)
+        
+        else: 
+            raise ValueError()
 
     def get_params(self) -> Dict[str, Dict[str, np.ndarray]]:
         """
@@ -177,7 +192,7 @@ class Model:
         The dictionary keys are module names, and values are parameter dicts.
         """
         state: Dict[str, Dict[str, np.ndarray]] = {}
-        for name, module in self.module_map.items():
+        for name, module in self.modules_map.items():
             if module.has_params:
                 state[name] = {param_name: param_value.copy()
                                for param_name, param_value in module.params.items()}
@@ -188,8 +203,8 @@ class Model:
         Load parameters from a given state dictionary into corresponding modules.
         """
         for name, params in state.items():
-            if name in self.module_map:
-                module = self.module_map[name]
+            if name in self.modules_map:
+                module = self.modules_map[name]
                 if module.has_params:
                     module.load_params(params)
 
