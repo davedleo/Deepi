@@ -15,7 +15,7 @@ class DummyParam(Module):
     def get_params(self):
         return self.params
 
-    def transform(self, params):
+    def forward(self, params):
         self.params = params
 
     def gradients(self):
@@ -26,7 +26,7 @@ def test_orthogonal_rule_returns_correct_shape_and_gain():
     gain = 2.0
     ortho = Orthogonal(gain=gain)
     shape = (100, 100)
-    result = ortho.rule(shape)
+    result = ortho.init(shape)
     
     # Forma e tipo
     assert isinstance(result, np.ndarray)
@@ -41,7 +41,7 @@ def test_orthogonal_rule_is_orthogonal_2d():
     gain = 1.0
     ortho = Orthogonal(gain=gain)
     shape = (50, 50)
-    result = ortho.rule(shape)
+    result = ortho.init(shape)
     
     # Verifica ortogonalità
     q = result.reshape(shape)
@@ -53,7 +53,7 @@ def test_orthogonal_rule_is_orthogonal_2d():
 def test_orthogonal_init_replaces_shapes_with_arrays():
     ortho = Orthogonal(gain=1.5)
     dummy = DummyParam((3, 3))
-    ortho.init(dummy)
+    ortho(dummy)
     for param in dummy.get_params().values():
         assert isinstance(param, np.ndarray)
         assert param.shape == dummy.shape

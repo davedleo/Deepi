@@ -8,7 +8,7 @@ class GELU(Activation):
         super().__init__("gelu")
         self.approximate = approximate
 
-    def transform(self, x: np.ndarray) -> np.ndarray:
+    def forward(self, x: np.ndarray) -> np.ndarray:
         if self.approximate:
             x3 = x ** 3
             inner = np.sqrt(2 / np.pi) * (x + 0.044715 * x3)

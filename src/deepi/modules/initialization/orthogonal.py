@@ -12,7 +12,7 @@ class Orthogonal(Initializer):
         super().__init__("orthogonal")
         self.gain = gain
 
-    def rule(self, shape: Tuple[int, ...]) -> np.ndarray:
+    def init(self, shape: Tuple[int, ...]) -> np.ndarray:
         flat_shape = (shape[0], int(np.prod(shape[1:])))
         a = np.random.randn(*flat_shape)
         if flat_shape[0] < flat_shape[1]:

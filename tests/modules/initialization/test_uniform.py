@@ -15,7 +15,7 @@ class DummyParam(Module):
     def get_params(self):
         return self.params
 
-    def transform(self, params):
+    def forward(self, params):
         self.params = params
 
     def gradients(self):
@@ -26,7 +26,7 @@ def test_uniform_rule_returns_correct_shape_and_range():
     low, high = -1.0, 1.0
     init = Uniform(low, high)
     shape = (1000, 1000)
-    result = init.rule(shape)
+    result = init.init(shape)
     assert isinstance(result, np.ndarray)
     assert result.shape == shape
     assert np.all(result >= low)
@@ -42,7 +42,7 @@ def test_uniform_rule_returns_correct_shape_and_range():
 def test_uniform_init_replaces_shapes_with_arrays():
     init = Uniform(-2.0, 2.0)
     dummy = DummyParam((3, 3))
-    init.init(dummy)
+    init(dummy)
     for param in dummy.get_params().values():
         assert isinstance(param, np.ndarray)
         assert param.shape == dummy.shape
@@ -69,7 +69,7 @@ def test_uniform_init_no_params_does_nothing():
         def get_params(self):
             return self.params
 
-        def transform(self, x):
+        def forward(self, x):
             return x
 
         def gradients(self, dy):
@@ -77,5 +77,5 @@ def test_uniform_init_no_params_does_nothing():
 
     init = Uniform(-1.0, 1.0)
     m = NoParam()
-    init.init(m)
+    init(m)
     assert m.params == {}

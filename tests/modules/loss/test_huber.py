@@ -19,7 +19,7 @@ def test_forward_exact(delta, reduction):
     loss_elem = mask * 0.5 * diff**2 + (~mask) * (delta * (abs_diff - 0.5 * delta))
     per_sample = loss_elem.reshape(loss_elem.shape[0], -1).sum(axis=1)
 
-    loss = loss_fn.forward(y_pred, y_true)
+    loss = loss_fn(y_pred, y_true)
 
     if reduction is None:
         expected = per_sample
@@ -41,7 +41,7 @@ def test_backward_exact(delta, reduction):
     y_true = np.array([[1.0, 0.0, 0.0],
                        [0.0, 1.0, 0.0]])
 
-    loss_fn.forward(y_pred, y_true)
+    loss_fn(y_pred, y_true)
     grad = loss_fn.backward()
 
     diff = y_pred - y_true
@@ -61,7 +61,7 @@ def test_forward_eval_mode_no_cache():
     y_pred = np.array([[1.0, -0.5]])
     y_true = np.array([[0.0, 0.0]])
 
-    loss = loss_fn.forward(y_pred, y_true)
+    loss = loss_fn(y_pred, y_true)
     assert loss_fn.x is None
     assert loss_fn.y is None
 
@@ -72,7 +72,7 @@ def test_forward_train_mode_caches():
     y_pred = np.array([[1.0, -0.5]])
     y_true = np.array([[0.0, 0.0]])
 
-    loss = loss_fn.forward(y_pred, y_true)
+    loss = loss_fn(y_pred, y_true)
     assert np.allclose(loss_fn.x[0], y_pred)
     assert np.allclose(loss_fn.x[1], y_true)
     assert np.allclose(loss_fn.y, loss)
@@ -84,7 +84,7 @@ def test_clear_resets():
     y_pred = np.array([[1.0, -0.5]])
     y_true = np.array([[0.0, 0.0]])
 
-    loss_fn.forward(y_pred, y_true)
+    loss_fn(y_pred, y_true)
     loss_fn.backward()
     loss_fn.clear()
 

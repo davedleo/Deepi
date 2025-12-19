@@ -14,5 +14,5 @@ class Uniform(Initializer):
         self.low = low 
         self.high = high 
 
-    def rule(self, shape: Tuple[int, ...]) -> np.ndarray: 
+    def init(self, shape: Tuple[int, ...]) -> np.ndarray: 
         return np.random.uniform(self.low, self.high, shape)

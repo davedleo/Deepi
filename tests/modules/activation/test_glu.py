@@ -9,7 +9,7 @@ from deepi.modules.activation.glu import GLU
 def test_forward_exact():
     m = GLU(axis=-1)
     x = np.array([[1.0, 2.0, 3.0, 4.0]])
-    y = m.forward(x)
+    y = m(x)
     a, b = np.split(x, 2, axis=-1)
     expected = a * (1.0 / (1.0 + np.exp(-b)))
     assert np.allclose(y, expected), "Forward output mismatch with exact formula"
@@ -18,7 +18,7 @@ def test_backward_exact():
     m = GLU(axis=-1)
     m.train()
     x = np.array([[1.0, 2.0, 3.0, 4.0]])
-    m.forward(x)
+    m(x)
     dy = np.ones_like(x)
     dx = m.gradients(dy)
     a, b = np.split(x, 2, axis=-1)
@@ -34,7 +34,7 @@ def test_backward_accumulation():
     m = GLU(axis=-1)
     m.train()
     x = np.array([[1.0, 2.0, 3.0, 4.0]])
-    m.forward(x)
+    m(x)
     dy1 = np.ones_like(x)
     dy2 = 2 * np.ones_like(x)
     m.backward(dy1)
@@ -51,14 +51,14 @@ def test_eval_mode_no_cache():
     m = GLU(axis=-1)
     m.eval()
     x = np.array([[1.0, 2.0, 3.0, 4.0]])
-    y = m.forward(x)
+    y = m(x)
     assert m.x is None and m.y is None, "Cache should not store values in eval mode"
 
 def test_train_mode_cache():
     m = GLU(axis=-1)
     m.train()
     x = np.array([[1.0, 2.0, 3.0, 4.0]])
-    y = m.forward(x)
+    y = m(x)
     assert np.allclose(m.x, x)
     assert np.allclose(m.y, y)
 
@@ -66,7 +66,7 @@ def test_clear_resets():
     m = GLU(axis=-1)
     m.train()
     x = np.array([[1.0, 2.0, 3.0, 4.0]])
-    m.forward(x)
+    m(x)
     dy = np.ones_like(x)
     m.backward(dy)
     m.clear()

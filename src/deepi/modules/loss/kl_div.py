@@ -8,7 +8,7 @@ class KLDiv(Loss):
         super().__init__("kldiv", reduction)
         self.eps = eps
 
-    def transform(self, y_hat: np.ndarray, y: np.ndarray) -> np.ndarray: 
+    def forward(self, y_hat: np.ndarray, y: np.ndarray) -> np.ndarray: 
         loss = y * (np.log(y + self.eps) - np.log(y_hat + self.eps))
         return loss.sum(1)
     

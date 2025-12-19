@@ -9,7 +9,7 @@ from deepi.modules.activation.softmax import Softmax
 def test_forward_exact():
     m = Softmax(axis=-1)
     x = np.array([[1.0, 2.0, 3.0]])
-    y = m.forward(x)
+    y = m(x)
     x_max = np.max(x, axis=-1, keepdims=True)
     exp_x = np.exp(x - x_max)
     expected = exp_x / np.sum(exp_x, axis=-1, keepdims=True)
@@ -19,7 +19,7 @@ def test_backward_exact():
     m = Softmax(axis=-1)
     m.train()
     x = np.array([[1.0, 2.0, 3.0]])
-    m.forward(x)
+    m(x)
     dy = np.array([[0.1, 0.2, 0.3]])
     dx = m.gradients(dy)
 
@@ -32,7 +32,7 @@ def test_backward_accumulation():
     m = Softmax(axis=-1)
     m.train()
     x = np.array([[1.0, 2.0, 3.0]])
-    m.forward(x)
+    m(x)
     dy1 = np.array([[1.0, 2.0, 3.0]])
     dy2 = np.array([[4.0, 5.0, 6.0]])
     m.backward(dy1)
@@ -47,14 +47,14 @@ def test_eval_mode_no_cache():
     m = Softmax(axis=-1)
     m.eval()
     x = np.array([[1.0, 2.0, 3.0]])
-    y = m.forward(x)
+    y = m(x)
     assert m.x is None and m.y is None, "Cache should not store values in eval mode"
 
 def test_train_mode_cache():
     m = Softmax(axis=-1)
     m.train()
     x = np.array([[1.0, 2.0, 3.0]])
-    y = m.forward(x)
+    y = m(x)
     assert np.allclose(m.x, x)
     assert np.allclose(m.y, y)
 
@@ -62,7 +62,7 @@ def test_clear_resets():
     m = Softmax(axis=-1)
     m.train()
     x = np.array([[1.0, 2.0, 3.0]])
-    m.forward(x)
+    m(x)
     dy = np.ones_like(x)
     m.backward(dy)
     m.clear()
@@ -74,7 +74,7 @@ def test_jacobian_vector_product():
     m = Softmax(axis=-1)
     m.train()
     x = np.array([[0.5, 1.0, 1.5]])
-    m.forward(x)
+    m(x)
     dy = np.array([[0.1, 0.2, 0.3]])
 
     # Full Jacobian for small inputs

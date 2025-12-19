@@ -10,7 +10,7 @@ class DummyActivation(Activation):
     def __init__(self):
         super().__init__("dummy")
 
-    def transform(self, x: np.ndarray) -> np.ndarray:
+    def forward(self, x: np.ndarray) -> np.ndarray:
         return 2 * x
 
     def gradients(self, dy: np.ndarray) -> np.ndarray:
@@ -23,7 +23,7 @@ class DummyActivation(Activation):
 def test_forward_without_training():
     m = DummyActivation()
     x = np.array([1., 2., 3.])
-    y = m.forward(x)
+    y = m(x)
     assert np.allclose(y, [2., 4., 6.])
     assert m.x is None
     assert m.y is None
@@ -32,7 +32,7 @@ def test_forward_with_training_caching():
     m = DummyActivation()
     m.train()
     x = np.array([1., 3.])
-    y = m.forward(x)
+    y = m(x)
     assert np.allclose(y, [2., 6.])
     assert np.allclose(m.x, x)
     assert np.allclose(m.y, y)
@@ -56,7 +56,7 @@ def test_clear_resets():
     m = DummyActivation()
     m.train()
     x = np.array([1., 2.])
-    m.forward(x)
+    m(x)
     m.backward(np.array([3., 4.]))
     m.clear()
     assert m.x is None

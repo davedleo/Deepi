@@ -12,7 +12,7 @@ def test_forward_rmse(reduction):
                   [2.0, 1.0, 1.0]])
 
     loss_fn.train()
-    loss = loss_fn.forward(y_hat, y)
+    loss = loss_fn(y_hat, y)
     
     per_sample_mse = np.mean((y_hat - y) ** 2, axis=1)
     expected = np.sqrt(per_sample_mse + loss_fn.eps)
@@ -34,7 +34,7 @@ def test_gradients_rmse(reduction):
                   [2.0, 1.0, 1.0]])
 
     loss_fn.train()
-    loss_fn.forward(y_hat, y)
+    loss_fn(y_hat, y)
     grad = loss_fn.backward()
 
     diff = y_hat - y
@@ -54,6 +54,6 @@ def test_backward_returns_array():
     y_hat = np.array([[1.0, 2.0]])
     y = np.array([[2.0, 1.0]])
     
-    loss_fn.forward(y_hat, y)  # forward must be called first
+    loss_fn(y_hat, y)  # forward must be called first
     grad = loss_fn.backward()  # backward should now work
     assert grad.shape == y.shape

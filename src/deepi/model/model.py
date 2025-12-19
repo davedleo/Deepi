@@ -33,6 +33,50 @@ class Model:
 
         self._build(initializer)
 
+    def __call__(self, x: ArrayOrTuple) -> ArrayOrTuple:
+        """
+        Perform a forward pass through the model given input data x.
+        Supports single or multiple inputs.
+        """
+        buffers: Dict[Module, List[np.ndarray]] = {module: [] for module in self.modules}
+        outputs_buffer: Dict[Module, np.ndarray] = {}
+
+        # Feed inputs into the buffers
+        if len(self.inputs) == 1:
+            buffers[self.inputs[0]].append(x)
+        else:
+            assert isinstance(x, tuple), "Multiple inputs require tuple input"
+            for input_module, input_data in zip(self.inputs, x):
+                buffers[input_module].append(input_data)
+
+        # Execute modules in topological order
+        for module in self.modules:
+            if isinstance(module, Input):
+                module_input = buffers[module][0]
+            else:
+                module_inputs = buffers[module]
+                if len(module_inputs) == 1:
+                    module_input = module_inputs[0]
+                else:
+                    module_input = tuple(module_inputs)
+
+            module_output = module(module_input)
+            outputs_buffer[module] = module_output
+
+            # Distribute outputs to next modules
+            if isinstance(module_output, tuple):
+                for next_module, output_part in zip(module.next, module_output):
+                    buffers[next_module].append(output_part)
+            else:
+                for next_module in module.next:
+                    buffers[next_module].append(module_output)
+
+        # Collect outputs from the output modules
+        if len(self.outputs) == 1:
+            return outputs_buffer[self.outputs[0]]
+
+        return tuple(outputs_buffer[output_module] for output_module in self.outputs)
+
     def _build(self, initializer: Initializer):
         """
         Build the model graph by performing a DFS from outputs to inputs,
@@ -94,9 +138,9 @@ class Model:
             module.set_input(module_input)
 
             if module.has_params:
-                initializer.init(module)
+                initializer(module)
 
-            module_output = module.forward(module_input)
+            module_output = module(module_input)
 
             # Distribute outputs to next modules
             if isinstance(module_output, tuple):
@@ -124,50 +168,6 @@ class Model:
             module_counts[base_name] = count + 1
             unique_name = f"{base_name}_{count}"
             self.modules_map[unique_name] = module
-
-    def forward(self, x: ArrayOrTuple) -> ArrayOrTuple:
-        """
-        Perform a forward pass through the model given input data x.
-        Supports single or multiple inputs.
-        """
-        buffers: Dict[Module, List[np.ndarray]] = {module: [] for module in self.modules}
-        outputs_buffer: Dict[Module, np.ndarray] = {}
-
-        # Feed inputs into the buffers
-        if len(self.inputs) == 1:
-            buffers[self.inputs[0]].append(x)
-        else:
-            assert isinstance(x, tuple), "Multiple inputs require tuple input"
-            for input_module, input_data in zip(self.inputs, x):
-                buffers[input_module].append(input_data)
-
-        # Execute modules in topological order
-        for module in self.modules:
-            if isinstance(module, Input):
-                module_input = buffers[module][0]
-            else:
-                module_inputs = buffers[module]
-                if len(module_inputs) == 1:
-                    module_input = module_inputs[0]
-                else:
-                    module_input = tuple(module_inputs)
-
-            module_output = module.forward(module_input)
-            outputs_buffer[module] = module_output
-
-            # Distribute outputs to next modules
-            if isinstance(module_output, tuple):
-                for next_module, output_part in zip(module.next, module_output):
-                    buffers[next_module].append(output_part)
-            else:
-                for next_module in module.next:
-                    buffers[next_module].append(module_output)
-
-        # Collect outputs from the output modules
-        if len(self.outputs) == 1:
-            return outputs_buffer[self.outputs[0]]
-
-        return tuple(outputs_buffer[output_module] for output_module in self.outputs)
 
     def backward(self, dy: ArrayOrTuple):
         """

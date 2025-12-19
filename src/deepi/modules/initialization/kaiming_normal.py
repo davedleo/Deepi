@@ -21,7 +21,7 @@ class KaimingNormal(Initializer):
         
         self.fan_mode = fan_mode
 
-    def rule(self, shape: Tuple[int, ...]) -> np.ndarray: 
+    def init(self, shape: Tuple[int, ...]) -> np.ndarray: 
         if self.fan_mode == "in": 
             fan = self.fan_in(shape)
         elif self.fan_mode == "out": 

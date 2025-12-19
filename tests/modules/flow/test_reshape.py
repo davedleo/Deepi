@@ -10,7 +10,7 @@ def test_forward_exact():
     """Check forward reshape correctness."""
     m = Reshape((2, 2))  # target shape excluding batch
     x = np.arange(4).reshape(1, 4)  # starting shape (1,4)
-    y = m.forward(x)
+    y = m(x)
     
     expected = np.arange(4).reshape(1, 2, 2)
     assert np.allclose(y, expected), "Forward reshape result mismatch"
@@ -22,7 +22,7 @@ def test_backward_exact():
     m.train()
 
     x = np.arange(8).reshape(2, 4)         # original shape (2,4)
-    y = m.forward(x)                       # becomes (2,4,1)
+    y = m(x)                       # becomes (2,4,1)
     dy = np.ones((2, 4, 1))                # incoming gradient
     dx = m.gradients(dy)
 
@@ -39,7 +39,7 @@ def test_backward_accumulation():
     m.train()
 
     x = np.zeros((5, 6))  # batch = 5
-    m.forward(x)
+    m(x)
 
     dy1 = np.ones((5, 3, 2))
     dy2 = np.full((5, 3, 2), 2.0)
@@ -63,7 +63,7 @@ def test_eval_mode_no_cache():
     m.eval()
 
     x = np.ones((4, 4))
-    y = m.forward(x)
+    y = m(x)
 
     assert m.x is None and m.y is None, \
         "Eval mode should not cache values"
@@ -75,7 +75,7 @@ def test_train_mode_cache():
     m.train()
 
     x = np.arange(4).reshape(1, 4)
-    y = m.forward(x)
+    y = m(x)
 
     assert np.allclose(m.x, x)
     assert np.allclose(m.y, y)
@@ -87,7 +87,7 @@ def test_clear_resets():
     m.train()
 
     x = np.arange(4).reshape(1, 4)
-    m.forward(x)
+    m(x)
 
     dy = np.ones((1, 2, 2))
     m.backward(dy)

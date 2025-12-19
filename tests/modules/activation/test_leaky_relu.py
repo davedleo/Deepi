@@ -9,7 +9,7 @@ from deepi.modules.activation.leaky_relu import LeakyReLU
 def test_forward_exact():
     m = LeakyReLU(alpha=0.01)
     x = np.array([-2.0, -1.0, 0.0, 1.0, 2.0])
-    y = m.forward(x)
+    y = m(x)
     expected = np.where(x >= 0.0, x, x * 0.01)
     assert np.allclose(y, expected), "Forward output mismatch with exact formula"
 
@@ -17,7 +17,7 @@ def test_backward_exact():
     m = LeakyReLU(alpha=0.01)
     m.train()
     x = np.array([-2.0, -1.0, 0.0, 1.0, 2.0])
-    m.forward(x)
+    m(x)
     dy = np.ones_like(x)
     dx = m.gradients(dy)
     expected_dx = dy * np.where(x >= 0.0, 1.0, 0.01)
@@ -27,7 +27,7 @@ def test_backward_accumulation():
     m = LeakyReLU(alpha=0.01)
     m.train()
     x = np.array([-1.0, 0.5, 2.0])
-    m.forward(x)
+    m(x)
     dy1 = np.array([1.0, 2.0, 3.0])
     dy2 = np.array([4.0, 5.0, 6.0])
     m.backward(dy1)
@@ -40,14 +40,14 @@ def test_eval_mode_no_cache():
     m = LeakyReLU(alpha=0.01)
     m.eval()
     x = np.array([-1.0, 0.0, 1.0])
-    y = m.forward(x)
+    y = m(x)
     assert m.x is None and m.y is None, "Cache should not store values in eval mode"
 
 def test_train_mode_cache():
     m = LeakyReLU(alpha=0.01)
     m.train()
     x = np.array([-1.0, 0.0, 1.0])
-    y = m.forward(x)
+    y = m(x)
     assert np.allclose(m.x, x)
     assert np.allclose(m.y, y)
 
@@ -55,7 +55,7 @@ def test_clear_resets():
     m = LeakyReLU(alpha=0.01)
     m.train()
     x = np.array([-1.0, 0.0, 1.0])
-    m.forward(x)
+    m(x)
     dy = np.array([1.0, 2.0, 3.0])
     m.backward(dy)
     m.clear()

@@ -21,7 +21,7 @@ def test_forward_exact(reduction):
 
     y = np.array([0, 2])  # correct classes
 
-    loss = loss_fn.forward(y_hat, y)
+    loss = loss_fn(y_hat, y)
 
     # NLL = -log p(correct_class)
     expected_losses = -y_hat[np.arange(2), y]
@@ -48,7 +48,7 @@ def test_backward_exact(reduction):
 
     y = np.array([0, 2])
 
-    loss_fn.forward(y_hat, y)  # must call forward first
+    loss_fn(y_hat, y)  # must call forward first
     grad = loss_fn.backward()
 
     # gradient is -1 at the correct class index, zero elsewhere
@@ -69,7 +69,7 @@ def test_forward_eval_no_cache():
     y_hat = np.log(np.array([[0.6, 0.4]]))
     y = np.array([1])
 
-    loss = loss_fn.forward(y_hat, y)
+    loss = loss_fn(y_hat, y)
 
     assert loss_fn.x is None
     assert loss_fn.y is None
@@ -82,7 +82,7 @@ def test_forward_train_cached():
     y_hat = np.log(np.array([[0.6, 0.4]]))
     y = np.array([1])
 
-    loss = loss_fn.forward(y_hat, y)
+    loss = loss_fn(y_hat, y)
 
     assert np.allclose(loss_fn.x[0], y_hat)
     assert np.allclose(loss_fn.x[1], y)
@@ -96,7 +96,7 @@ def test_clear_resets_state():
     y_hat = np.log(np.array([[0.6, 0.4]]))
     y = np.array([1])
 
-    loss_fn.forward(y_hat, y)
+    loss_fn(y_hat, y)
     loss_fn.backward()
 
     loss_fn.clear()

@@ -6,7 +6,7 @@ class Sigmoid(Activation):
     def __init__(self): 
         super().__init__("sigmoid")
 
-    def transform(self, x: np.ndarray) -> np.ndarray: 
+    def forward(self, x: np.ndarray) -> np.ndarray: 
         pos_mask = x >= 0.0
         neg_mask = ~pos_mask
         y = np.empty_like(x, dtype=np.float64)

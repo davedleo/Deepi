@@ -8,7 +8,7 @@ class RMSE(Loss):
         super().__init__("rmse", reduction)
         self.eps = eps
 
-    def transform(self, y_hat: np.ndarray, y: np.ndarray) -> np.ndarray:
+    def forward(self, y_hat: np.ndarray, y: np.ndarray) -> np.ndarray:
         mse = ((y_hat - y) ** 2).mean(1)
         return np.sqrt(mse + self.eps)
 

@@ -17,7 +17,7 @@ class DummyUnary(Module):
     def __init__(self):
         super().__init__("dummy.unary")
 
-    def transform(self, x: ArrayOrTuple):
+    def forward(self, x: ArrayOrTuple):
         return 2 * x
 
     def gradients(self, dy: ArrayOrTuple):
@@ -33,7 +33,7 @@ class DummyBinary(Module):
     def __init__(self):
         super().__init__("dummy.binary")
 
-    def transform(self, xs: ArrayOrTuple):
+    def forward(self, xs: ArrayOrTuple):
         x1, x2 = xs
         return x1 + x2
 
@@ -53,7 +53,7 @@ class DummyParam(Module):
         self.params["w"] = np.ones(shape)
         self.grads["w"] = np.zeros(shape)
 
-    def transform(self, x: ArrayOrTuple):
+    def forward(self, x: ArrayOrTuple):
         return x + self.params["w"]
 
     def gradients(self, dy: ArrayOrTuple):
@@ -69,7 +69,7 @@ class Identity(Module):
     def __init__(self):
         super().__init__("identity")
 
-    def transform(self, x):
+    def forward(self, x):
         return x
 
     def gradients(self, dy):
@@ -84,7 +84,7 @@ def test_forward_without_training():
     m = DummyUnary()
     x = np.array([1., 2., 3.])
 
-    y = m.forward(x)
+    y = m(x)
 
     assert np.allclose(y, np.array([2., 4., 6.]))
     assert m.x is None
@@ -96,7 +96,7 @@ def test_forward_with_training_caching():
     m.train()
 
     x = np.array([1., 3.])
-    y = m.forward(x)
+    y = m(x)
 
     assert np.allclose(y, np.array([2., 6.]))
     assert np.allclose(m.x, x)
@@ -107,7 +107,7 @@ def test_backward_local_computation():
     m = DummyUnary()
     m.train()
     x = np.array([1., 2., 3.])
-    y = m.forward(x)
+    y = m(x)
 
     dy = np.array([10., 11., 12.])
     m.backward(dy)
@@ -150,10 +150,10 @@ def test_backward_with_tuple_gradients():
     p2.link(b)
 
     # simulate forward
-    f1 = p1.forward(x1)  # 2*x1
-    f2 = p2.forward(x2)  # 2*x2
+    f1 = p1(x1)  # 2*x1
+    f2 = p2(x2)  # 2*x2
 
-    y = b.forward((f1, f2))
+    y = b((f1, f2))
     assert np.allclose(y, (2 * x1) + (2 * x2))
 
     # backward
@@ -191,9 +191,9 @@ def test_backward_fan_out_accumulation():
     U1.link(U3)
 
     x = np.array([1., 1.])
-    U1.forward(A.forward(x))
-    U2.forward(U1.y)
-    U3.forward(U1.y)
+    U1(A(x))
+    U2(U1.y)
+    U3(U1.y)
 
     dy_U2 = np.array([2., 3.])
     dy_U3 = np.array([4., 1.])
@@ -219,7 +219,7 @@ def test_parameter_gradient_update():
     m = DummyParam(shape=(3,))
     x = np.array([[1., 1., 1.],
                   [2., 2., 2.]])
-    y = m.forward(x)
+    y = m(x)
 
     dy = np.array([[10., 10., 10.],
                    [5., 5., 5.]])
@@ -244,7 +244,7 @@ def test_clear_resets_all():
     m.train()
 
     x = np.array([1., 2.])
-    m.forward(x)
+    m(x)
     m.backward(np.array([10., 20.]))
 
     m.clear()

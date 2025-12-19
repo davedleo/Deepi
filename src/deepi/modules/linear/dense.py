@@ -18,7 +18,7 @@ class Dense(Linear):
         out_size = self.params["w"][0]
         self.params["w"] = (in_size, out_size)
 
-    def transform(self, x: np.ndarray) -> np.ndarray: 
+    def forward(self, x: np.ndarray) -> np.ndarray: 
         y = x @ self.params["w"]
 
         if self._has_bias: 

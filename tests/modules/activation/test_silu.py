@@ -9,7 +9,7 @@ from deepi.modules.activation.silu import SiLU
 def test_forward_exact():
     m = SiLU()
     x = np.array([-10.0, -1.0, 0.0, 1.0, 10.0])
-    y = m.forward(x)
+    y = m(x)
     # Compute expected using numerically stable sigmoid
     sigmoid_x = np.empty_like(x, dtype=np.float64)
     mask = x >= 0
@@ -23,7 +23,7 @@ def test_backward_exact():
     m = SiLU()
     m.train()
     x = np.array([-2.0, -0.5, 0.0, 0.5, 2.0])
-    m.forward(x)
+    m(x)
     dy = np.ones_like(x)
     sigmoid_x = np.empty_like(x, dtype=np.float64)
     mask = x >= 0
@@ -38,7 +38,7 @@ def test_backward_accumulation():
     m = SiLU()
     m.train()
     x = np.array([-1.0, 0.0, 1.0])
-    m.forward(x)
+    m(x)
     dy1 = np.array([1.0, 2.0, 3.0])
     dy2 = np.array([4.0, 5.0, 6.0])
     m.backward(dy1)
@@ -56,14 +56,14 @@ def test_eval_mode_no_cache():
     m = SiLU()
     m.eval()
     x = np.array([-1.0, 0.0, 1.0])
-    y = m.forward(x)
+    y = m(x)
     assert m.x is None and m.y is None, "Cache should not store values in eval mode"
 
 def test_train_mode_cache():
     m = SiLU()
     m.train()
     x = np.array([-1.0, 0.0, 1.0])
-    y = m.forward(x)
+    y = m(x)
     assert np.allclose(m.x, x)
     assert np.allclose(m.y, y)
 
@@ -71,7 +71,7 @@ def test_clear_resets():
     m = SiLU()
     m.train()
     x = np.array([-1.0, 0.0, 1.0])
-    m.forward(x)
+    m(x)
     dy = np.array([1.0, 2.0, 3.0])
     m.backward(dy)
     m.clear()

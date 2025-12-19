@@ -7,7 +7,7 @@ class Swish(Activation):
         super().__init__("swish")
         self.beta = beta
 
-    def transform(self, x: np.ndarray) -> np.ndarray:
+    def forward(self, x: np.ndarray) -> np.ndarray:
         z = self.beta * x
         sigmoid_z = np.empty_like(z, dtype=np.float64)
         mask = z >= 0

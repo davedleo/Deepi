@@ -14,7 +14,7 @@ class ElasticNet(Loss):
             raise ValueError()
         self.alpha = alpha
 
-    def transform(self, y_hat: np.ndarray, y: np.ndarray) -> np.ndarray: 
+    def forward(self, y_hat: np.ndarray, y: np.ndarray) -> np.ndarray: 
         l1 = np.abs(y_hat - y).sum(1)
         l2 = ((y_hat - y) ** 2.0).sum(1)
         return (1.0 - self.alpha) * l1 + self.alpha * l2

@@ -10,7 +10,7 @@ def test_forward_exact():
     m = Add()
     x1 = np.array([[1, 2]])
     x2 = np.array([[3, 4]])
-    y = m.forward((x1, x2))
+    y = m((x1, x2))
     expected = np.array([[4, 6]])
     assert np.allclose(y, expected), "Forward addition mismatch"
 
@@ -19,7 +19,7 @@ def test_backward_exact():
     m.train()
     x1 = np.array([[1, 2]])
     x2 = np.array([[3, 4]])
-    m.forward((x1, x2))
+    m((x1, x2))
 
     dy = np.ones((1, 2))
     dx1, dx2 = m.gradients(dy)
@@ -32,7 +32,7 @@ def test_backward_accumulation():
     m.train()
     x1 = np.array([[1, 2]])
     x2 = np.array([[3, 4]])
-    m.forward((x1, x2))
+    m((x1, x2))
 
     dy1 = np.ones((1, 2))
     dy2 = np.full((1, 2), 2.0)
@@ -49,7 +49,7 @@ def test_eval_mode_no_cache():
     m.eval()
     x1 = np.array([[1, 2]])
     x2 = np.array([[3, 4]])
-    y = m.forward((x1, x2))
+    y = m((x1, x2))
     assert m.x is None and m.y is None, "Eval mode should not cache values"
 
 def test_train_mode_cache():
@@ -57,7 +57,7 @@ def test_train_mode_cache():
     m.train()
     x1 = np.array([[1, 2]])
     x2 = np.array([[3, 4]])
-    y = m.forward((x1, x2))
+    y = m((x1, x2))
 
     xs = (x1, x2)
     for stored, original in zip(m.x, xs):
@@ -69,7 +69,7 @@ def test_clear_resets():
     m.train()
     x1 = np.array([[1, 2]])
     x2 = np.array([[3, 4]])
-    m.forward((x1, x2))
+    m((x1, x2))
     dy = np.ones((1, 2))
     m.backward(dy)
 

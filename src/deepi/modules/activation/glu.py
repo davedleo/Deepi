@@ -7,7 +7,7 @@ class GLU(Activation):
         super().__init__("glu")
         self.axis = axis
 
-    def transform(self, x: np.ndarray) -> np.ndarray:
+    def forward(self, x: np.ndarray) -> np.ndarray:
         a, b = np.split(x, 2, axis=self.axis)
         sigmoid_b = 1.0 / (1.0 + np.exp(-b))
         return a * sigmoid_b

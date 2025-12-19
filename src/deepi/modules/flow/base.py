@@ -11,7 +11,7 @@ class Flow(Module):
         super().__init__(f"flow.{_type}", False)
         
     @abstractmethod
-    def transform(self, x: np.ndarray) -> np.ndarray: 
+    def forward(self, x: np.ndarray) -> np.ndarray: 
         pass 
 
     @abstractmethod 

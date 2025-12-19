@@ -21,7 +21,7 @@ class NLL(Loss):
             self.weights = np.array(weights_list, dtype=np.float64)
             self.weights /= self.weights.sum()  # normalize → same as PyTorch semantics
 
-    def transform(self, y_hat: np.ndarray, y: np.ndarray) -> np.ndarray:
+    def forward(self, y_hat: np.ndarray, y: np.ndarray) -> np.ndarray:
         n_samples = y_hat.shape[0]
         loss = - y_hat[np.arange(n_samples), y]
 

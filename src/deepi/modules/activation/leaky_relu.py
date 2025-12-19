@@ -7,7 +7,7 @@ class LeakyReLU(Activation):
         super().__init__("leaky_relu")
         self.alpha = alpha
 
-    def transform(self, x: np.ndarray) -> np.ndarray:
+    def forward(self, x: np.ndarray) -> np.ndarray:
         mask = x >= 0.0
         return mask * x + (~mask) * self.alpha * x
 

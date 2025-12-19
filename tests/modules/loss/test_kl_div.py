@@ -18,7 +18,7 @@ def test_forward_exact(reduction):
 
     eps = loss_fn.eps
 
-    loss = loss_fn.forward(y_hat, y)
+    loss = loss_fn(y_hat, y)
 
     # KL: sum_i y_i (log(y_i) - log(y_hat_i))
     elementwise = y * (np.log(y + eps) - np.log(y_hat + eps))
@@ -46,7 +46,7 @@ def test_backward_exact(reduction):
 
     eps = loss_fn.eps
 
-    loss_fn.forward(y_hat, y)
+    loss_fn(y_hat, y)
     grad = loss_fn.backward()
 
     # d/d(y_hat): - y / y_hat
@@ -66,7 +66,7 @@ def test_forward_eval_mode_no_cache():
     y_hat = np.array([[0.6, 0.3, 0.1]])
     y     = np.array([[0.5, 0.4, 0.1]])
 
-    loss = loss_fn.forward(y_hat, y)
+    loss = loss_fn(y_hat, y)
     assert loss_fn.x is None
     assert loss_fn.y is None
 
@@ -78,7 +78,7 @@ def test_forward_train_mode_caches():
     y_hat = np.array([[0.6, 0.3, 0.1]])
     y     = np.array([[0.5, 0.4, 0.1]])
 
-    loss = loss_fn.forward(y_hat, y)
+    loss = loss_fn(y_hat, y)
     assert np.allclose(loss_fn.x[0], y_hat)
     assert np.allclose(loss_fn.x[1], y)
     assert np.allclose(loss_fn.y, loss)
@@ -91,7 +91,7 @@ def test_clear_resets():
     y_hat = np.array([[0.6, 0.3, 0.1]])
     y     = np.array([[0.5, 0.4, 0.1]])
 
-    loss_fn.forward(y_hat, y)
+    loss_fn(y_hat, y)
     loss_fn.backward()
 
     loss_fn.clear()

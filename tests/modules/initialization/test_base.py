@@ -12,7 +12,7 @@ from deepi.modules.initialization.base import Initializer
 class DummyInit(Initializer):
     """Simple initializer that returns ones for a given shape."""
 
-    def rule(self, shape):
+    def init(self, shape):
         return np.ones(shape)
 
 
@@ -29,7 +29,7 @@ class DummyParam(Module):
     def get_params(self):
         return self.params
 
-    def transform(self, x):
+    def forward(self, x):
         return x + self.params["w"]
 
     def gradients(self, dy):
@@ -44,7 +44,7 @@ class DummyParam(Module):
 def test_rule_returns_array_of_ones():
     init = DummyInit("dummy")
     shape = (2, 3)
-    arr = init.rule(shape)
+    arr = init.init(shape)
     assert isinstance(arr, np.ndarray)
     assert arr.shape == shape
     assert np.all(arr == 1.0)
@@ -55,7 +55,7 @@ def test_init_replaces_shapes_with_arrays():
     m = DummyParam(shape=(2, 2))
     # Before init, params are tuples
     assert m.params["w"] == (2, 2)
-    init.init(m)
+    init(m)
     # After init, params are arrays of ones
     assert isinstance(m.params["w"], np.ndarray)
     assert m.params["w"].shape == (2, 2)
@@ -102,7 +102,7 @@ def test_init_no_params_does_nothing():
         def get_params(self):
             return self.params
 
-        def transform(self, x):
+        def forward(self, x):
             return x
 
         def gradients(self, dy):
@@ -110,5 +110,5 @@ def test_init_no_params_does_nothing():
 
     init = DummyInit("dummy")
     m = NoParam()
-    init.init(m)
+    init(m)
     assert m.params == {}

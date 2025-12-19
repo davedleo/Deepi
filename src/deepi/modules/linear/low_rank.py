@@ -20,7 +20,7 @@ class LowRank(Linear):
         out_size = self.params["w1"][0]
         self.params["w1"] = (in_size, out_size)
 
-    def transform(self, x: np.ndarray) -> np.ndarray: 
+    def forward(self, x: np.ndarray) -> np.ndarray: 
         xw1 = x @ self.params["w1"]
         y = xw1 @ self.params["w2"]
 

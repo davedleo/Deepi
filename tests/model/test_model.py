@@ -17,7 +17,7 @@ def test_forward_pass_dense_chain():
     dense = Dense(2)
     inp.link(dense)
     model = Model(inp, dense)
-    out = model.forward(x)
+    out = model(x)
     # Output should have shape (2, 2)
     assert out.shape == (2, 2)
     # Output should be computed as x @ dense.params["w"] + dense.params["b"]
@@ -37,7 +37,7 @@ def test_backward_pass_dense_chain():
     dense1.link(dense2)
     model = Model(inp, dense2)
     model.train()
-    out = model.forward(x)
+    out = model(x)
     dout = np.ones_like(out)
     dense2.backward(dout)
     # Dense layers should have non-None gradients
@@ -66,7 +66,7 @@ def test_train_eval_clear_modes():
         assert getattr(m, "_is_training", None) is False
     # Clear gradients
     model.train()
-    model.forward(small_input((1, 2)))
+    model(small_input((1, 2)))
     model.backward(np.ones((1, 2)))
     model.clear()
     for m in model.modules:

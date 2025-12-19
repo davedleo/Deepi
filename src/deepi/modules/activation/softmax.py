@@ -7,7 +7,7 @@ class Softmax(Activation):
         super().__init__("softmax")
         self.axis = axis
 
-    def transform(self, x: np.ndarray) -> np.ndarray:
+    def forward(self, x: np.ndarray) -> np.ndarray:
         x_max = np.max(x, axis=self.axis, keepdims=True)
         exp_x = np.exp(x - x_max)
         return exp_x / np.sum(exp_x, axis=self.axis, keepdims=True)

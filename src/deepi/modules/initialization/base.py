@@ -12,15 +12,15 @@ class Initializer(ABC):
         self._type = f"initializer.{_type}"
 
     @abstractmethod
-    def rule(self, shape: Tuple[int, ...]) -> np.ndarray:
+    def init(self, shape: Tuple[int, ...]) -> np.ndarray:
         pass
 
-    def init(self, module: Module):
+    def __call__(self, module: Module):
         if module.has_params:
             params = module.get_params()
             for k, v in params.items():
                 if isinstance(v, tuple):
-                    params[k] = self.rule(v)
+                    params[k] = self.init(v)
 
     def fan_in(self, shape: Tuple[int, ...]) -> int:
         if len(shape) == 2:

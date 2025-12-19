@@ -20,7 +20,7 @@ class Linear(Module):
             self.params["b"] = np.zeros((1, _out_size), dtype=np.float64)
         
     @abstractmethod
-    def transform(self, x: np.ndarray) -> np.ndarray: 
+    def forward(self, x: np.ndarray) -> np.ndarray: 
         pass 
 
     @abstractmethod 

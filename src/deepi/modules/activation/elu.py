@@ -6,7 +6,7 @@ class ELU(Activation):
         super().__init__("elu")
         self.alpha = alpha
 
-    def transform(self, x: np.ndarray) -> np.ndarray:
+    def forward(self, x: np.ndarray) -> np.ndarray:
         pos_mask = x > 0.0
         neg_mask = ~pos_mask
         y = x * pos_mask

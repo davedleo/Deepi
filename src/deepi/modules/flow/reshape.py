@@ -8,7 +8,7 @@ class Reshape(Flow):
         super().__init__("reshape")
         self.out_shape = out_shape
 
-    def transform(self, x: np.ndarray) -> np.ndarray: 
+    def forward(self, x: np.ndarray) -> np.ndarray: 
         out_shape = x.shape[:1] + self.out_shape
         return x.reshape(out_shape)
     
