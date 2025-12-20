@@ -1,11 +1,10 @@
 from abc import ABC, abstractmethod
+from copy import deepcopy
 from typing import Any, Dict, Optional
-import copy
 
 import numpy as np
 
 from deepi import Model
-from deepi.modules import Module
 from deepi.optimization.regularization import Regularizer
 
 
@@ -24,7 +23,7 @@ class Optimizer(ABC):
         self.lr = lr
         self.regularizer = regularizer
         self.decoupled_regularization = decoupled_regularization
-        self.sign = 1.0 if maximize else -1.0
+        self.sign = -1.0 if maximize else 1.0
 
         self.modules = {
             module_id: module
@@ -44,9 +43,8 @@ class Optimizer(ABC):
     @abstractmethod
     def direction(
         self,
-        w: np.ndarray,
         dw: np.ndarray,
-        buffer: Optional[Any],
+        buffer: Optional[Dict[str, np.ndarray]],
     ) -> np.ndarray:
         pass
 
@@ -59,21 +57,21 @@ class Optimizer(ABC):
             for k, w in params.items():
                 # Skip running stats
                 if not k.startswith("running"):
-                    dw = grads[k]
+                    dw = self.sign * grads[k]
                     buffer = module_buffer[k]
 
                     if self.regularizer is not None:
                         if self.decoupled_regularization:
-                            dp = self.direction(w, dw, buffer)
+                            dp = self.direction(dw, buffer)
                             dp += self.regularizer(w)
                         else:
                             dw_reg = dw + self.regularizer(w)
-                            dp = self.direction(w, dw_reg, buffer)
+                            dp = self.direction(dw_reg, buffer)
 
                     else:
-                        dp = self.direction(w, dw, buffer)
+                        dp = self.direction(dw, buffer)
 
-                    params[k] += self.sign * self.lr * dp
+                    params[k] -= self.lr * dp
 
     def get_buffer(self) -> Dict[str, Dict[str, Any]]:
         return self.buffer
@@ -85,4 +83,4 @@ class Optimizer(ABC):
             if module_id in self.buffer:
                 for k, buf in buffers.items():
                     if k in self.buffer[module_id]:
-                        self.buffer[module_id][k] = copy.deepcopy(buf)
+                        self.buffer[module_id][k] = deepcopy(buf)
