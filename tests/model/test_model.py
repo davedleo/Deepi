@@ -58,18 +58,18 @@ def test_train_eval_clear_modes():
     model = Model(inp, dense)
     # Train mode
     model.train()
-    for m in model.modules:
+    for m in model.topology:
         assert getattr(m, "_is_training", None) is True
     # Eval mode
     model.eval()
-    for m in model.modules:
+    for m in model.topology:
         assert getattr(m, "_is_training", None) is False
     # Clear gradients
     model.train()
     model(small_input((1, 2)))
     model.backward(np.ones((1, 2)))
     model.clear()
-    for m in model.modules:
+    for m in model.topology:
         if hasattr(m, "grads"):
             assert m.grads["w"] is None or np.allclose(m.grads["w"], 0)
 
@@ -102,18 +102,18 @@ def test_get_and_load_params():
 # Topological Order
 # -------------------------------
 def test_model_topological_order():
-    """Test that Model.modules returns modules in correct topological order."""
+    """Test that Model.topology returns modules in correct topological order."""
     inp = Input((3,))
     dense1 = Dense(4)
     dense2 = Dense(2)
     inp.link(dense1)
     dense1.link(dense2)
     model = Model(inp, dense2)
-    mods = model.modules
+    mods = model.topology
     assert mods == [inp, dense1, dense2]
 
 def test_model_topological_order_residual():
-    """Test that Model.modules returns correct topological order for a residual connection."""
+    """Test that Model.topology returns correct topological order for a residual connection."""
     inp = Input((3,))
     dense1 = Dense(3)
     dense2 = Dense(2)
@@ -125,7 +125,7 @@ def test_model_topological_order_residual():
     add.link(dense2)
 
     model = Model(inp, dense2)
-    mods = model.modules
+    mods = model.topology
 
     # Valid topological order: inp must come first,
     # dense1 before add, add before dense2

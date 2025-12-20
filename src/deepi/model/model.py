@@ -26,7 +26,7 @@ class Model:
 
         self.inputs = inputs
         self.outputs = outputs
-        self.modules: List[Module] = []
+        self.topology: List[Module] = []
 
         if initializer is None:
             initializer = KaimingUniform()
@@ -38,7 +38,7 @@ class Model:
         Perform a forward pass through the model given input data x.
         Supports single or multiple inputs.
         """
-        buffers: Dict[Module, List[np.ndarray]] = {module: [] for module in self.modules}
+        buffers: Dict[Module, List[np.ndarray]] = {module: [] for module in self.topology}
         outputs_buffer: Dict[Module, np.ndarray] = {}
 
         # Feed inputs into the buffers
@@ -50,7 +50,7 @@ class Model:
                 buffers[input_module].append(input_data)
 
         # Execute modules in topological order
-        for module in self.modules:
+        for module in self.topology:
             if isinstance(module, Input):
                 module_input = buffers[module][0]
             else:
@@ -90,7 +90,7 @@ class Model:
             visited_modules.add(module)
             for prev_module in module.prev:
                 dfs(prev_module)
-            self.modules.append(module)
+            self.topology.append(module)
 
         # Traverse from outputs backwards to inputs
         for output_module in self.outputs:
@@ -113,7 +113,7 @@ class Model:
         self.eval()
 
         # Buffer to hold intermediate outputs for each module
-        buffers: Dict[Module, List[np.ndarray]] = {module: [] for module in self.modules}
+        buffers: Dict[Module, List[np.ndarray]] = {module: [] for module in self.topology}
 
         # Generate dummy inputs for Input modules
         for input_module in self.inputs:
@@ -121,7 +121,7 @@ class Model:
             buffers[input_module].append(sample_input)
 
         # Forward pass through the modules to initialize parameters
-        for module in self.modules:
+        for module in self.topology:
             if isinstance(module, Input):
                 module_input = buffers[module][0]
             else:
@@ -151,7 +151,7 @@ class Model:
                     buffers[next_module].append(module_output)
 
         # Clear buffers after initialization
-        for module in self.modules:
+        for module in self.topology:
             buffers[module] = []
 
     def _map_modules(self):
@@ -159,15 +159,15 @@ class Model:
         Create a mapping from unique module names to module instances.
         Names are generated based on module class name and occurrence count.
         """
-        self.modules_map: Dict[str, Module] = {}
+        self.modules: Dict[str, Module] = {}
         module_counts: Dict[str, int] = {}
 
-        for module in self.modules:
+        for module in self.topology:
             base_name = type(module).__name__
             count = module_counts.get(base_name, 0)
             module_counts[base_name] = count + 1
             unique_name = f"{base_name}_{count}"
-            self.modules_map[unique_name] = module
+            self.modules[unique_name] = module
 
     def backward(self, dy: ArrayOrTuple):
         """
@@ -192,7 +192,7 @@ class Model:
         The dictionary keys are module names, and values are parameter dicts.
         """
         state: Dict[str, Dict[str, np.ndarray]] = {}
-        for name, module in self.modules_map.items():
+        for name, module in self.modules.items():
             if module.has_params:
                 state[name] = {param_name: param_value.copy()
                                for param_name, param_value in module.params.items()}
@@ -203,8 +203,8 @@ class Model:
         Load parameters from a given state dictionary into corresponding modules.
         """
         for name, params in state.items():
-            if name in self.modules_map:
-                module = self.modules_map[name]
+            if name in self.modules:
+                module = self.modules[name]
                 if module.has_params:
                     module.load_params(params)
 
@@ -212,21 +212,21 @@ class Model:
         """
         Set all modules to training mode.
         """
-        for module in self.modules:
+        for module in self.topology:
             module.train()
 
     def eval(self):
         """
         Set all modules to evaluation mode.
         """
-        for module in self.modules:
+        for module in self.topology:
             module.eval()
 
     def clear(self):
         """
         Clear the internal state of all modules.
         """
-        for module in self.modules:
+        for module in self.topology:
             module.clear()
 
     @property

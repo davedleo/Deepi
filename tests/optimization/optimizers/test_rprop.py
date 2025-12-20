@@ -34,7 +34,7 @@ def test_rprop_basic_step():
     model.train()
 
     opt = RProp(model, lr=0.1)
-    for module in model.modules:
+    for module in model.topology:
         if module.has_params:
             for k in module.params:
                 module.grads[k] = np.ones_like(module.params[k])
@@ -56,14 +56,14 @@ def test_rprop_increases_eta_on_same_sign():
     model.train()
 
     opt = RProp(model, lr=0.1, eta_minus=0.5, eta_plus=2.0, step_max=10.0)
-    for module in model.modules:
+    for module in model.topology:
         if module.has_params:
             for k in module.params:
                 module.grads[k] = np.ones_like(module.params[k])
 
     opt.step()  # first step
     # second step, same gradient sign
-    for module in model.modules:
+    for module in model.topology:
         if module.has_params:
             for k in module.params:
                 module.grads[k] = np.ones_like(module.params[k])
@@ -82,7 +82,7 @@ def test_rprop_decreases_eta_on_sign_flip():
     model.train()
 
     opt = RProp(model, lr=0.1, eta_minus=0.5, eta_plus=2.0, step_max=10.0)
-    for module in model.modules:
+    for module in model.topology:
         if module.has_params:
             for k in module.params:
                 module.grads[k] = np.ones_like(module.params[k])
@@ -90,7 +90,7 @@ def test_rprop_decreases_eta_on_sign_flip():
     opt.step()  # initialize buffer
 
     # flip gradient
-    for module in model.modules:
+    for module in model.topology:
         if module.has_params:
             for k in module.params:
                 module.grads[k] = -np.ones_like(module.params[k])
@@ -113,7 +113,7 @@ def test_rprop_maximize_flag():
     model.train()
 
     opt = RProp(model, lr=0.1, maximize=True)
-    for module in model.modules:
+    for module in model.topology:
         if module.has_params:
             for k in module.params:
                 module.grads[k] = np.ones_like(module.params[k])
@@ -152,19 +152,19 @@ def test_rprop_gradients_not_modified():
     model.train()
 
     opt = RProp(model, lr=0.1)
-    for module in model.modules:
+    for module in model.topology:
         if module.has_params:
             for k in module.params:
                 module.grads[k] = np.ones_like(module.params[k])
 
     grad_copies = {}
-    for module in model.modules:
+    for module in model.topology:
         if module.has_params:
             grad_copies[module] = {k: v.copy() for k, v in module.grads.items()}
 
     opt.step()
 
-    for module in model.modules:
+    for module in model.topology:
         if module.has_params:
             for k, v in module.grads.items():
                 assert np.allclose(v, grad_copies[module][k])

@@ -27,7 +27,7 @@ class Optimizer(ABC):
 
         self.modules = {
             module_id: module
-            for module_id, module in model.modules_map.items()
+            for module_id, module in model.modules.items()
             if module.has_params
         }
 

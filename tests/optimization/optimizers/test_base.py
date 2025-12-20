@@ -61,7 +61,7 @@ def test_step_without_regularizer():
     )
 
     # fake gradients
-    for module in model.modules:
+    for module in model.topology:
         if module.has_params:
             for k in module.params:
                 module.grads[k] = np.ones_like(module.params[k])
@@ -69,7 +69,7 @@ def test_step_without_regularizer():
     orig_params = model.get_params()
     opt.step()
 
-    for name, module in model.modules_map.items():
+    for name, module in model.modules.items():
         if module.has_params:
             for k, v in module.params.items():
                 assert np.allclose(v, orig_params[name][k] - 0.1 * np.ones_like(v))
@@ -91,7 +91,7 @@ def test_step_with_regularizer_decoupled():
         _type="dummy"
     )
 
-    for module in model.modules:
+    for module in model.topology:
         if module.has_params:
             for k in module.params:
                 module.grads[k] = np.zeros_like(module.params[k])
@@ -99,7 +99,7 @@ def test_step_with_regularizer_decoupled():
     orig_params = model.get_params()
     opt.step()
 
-    for name, module in model.modules_map.items():
+    for name, module in model.modules.items():
         if module.has_params:
             for k, v in module.params.items():
                 # regularizer adds 1 * lr
@@ -122,7 +122,7 @@ def test_step_with_regularizer_coupled():
         _type="dummy"
     )
 
-    for module in model.modules:
+    for module in model.topology:
         if module.has_params:
             for k in module.params:
                 module.grads[k] = np.zeros_like(module.params[k])
@@ -130,7 +130,7 @@ def test_step_with_regularizer_coupled():
     orig_params = model.get_params()
     opt.step()
 
-    for name, module in model.modules_map.items():
+    for name, module in model.modules.items():
         if module.has_params:
             for k, v in module.params.items():
                 # dw + reg = 0 + 1, * lr
@@ -152,7 +152,7 @@ def test_maximize_sign():
         _type="dummy"
     )
 
-    for module in model.modules:
+    for module in model.topology:
         if module.has_params:
             for k in module.params:
                 module.grads[k] = np.ones_like(module.params[k])
@@ -160,7 +160,7 @@ def test_maximize_sign():
     orig_params = model.get_params()
     opt.step()
 
-    for name, module in model.modules_map.items():
+    for name, module in model.modules.items():
         if module.has_params:
             for k, v in module.params.items():
                 assert np.allclose(v, orig_params[name][k] + 0.1 * np.ones_like(v))
@@ -181,20 +181,20 @@ def test_multiple_gradients_preserved():
         _type="dummy"
     )
 
-    for module in model.modules:
+    for module in model.topology:
         if module.has_params:
             for k in module.params:
                 module.grads[k] = np.ones_like(module.params[k])
 
     # store copies of gradients
     grad_copies = {}
-    for module in model.modules:
+    for module in model.topology:
         if module.has_params:
             grad_copies[module] = {k: v.copy() for k, v in module.grads.items()}
 
     opt.step()
 
-    for module in model.modules:
+    for module in model.topology:
         if module.has_params:
             for k, v in module.grads.items():
                 assert np.allclose(v, grad_copies[module][k])

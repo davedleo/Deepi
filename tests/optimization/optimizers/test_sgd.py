@@ -35,7 +35,7 @@ def test_sgd_without_momentum():
 
     opt = SGD(model, lr=0.1, momentum=0.0)
 
-    for module in model.modules:
+    for module in model.topology:
         if module.has_params:
             for k in module.params:
                 module.grads[k] = np.ones_like(module.params[k])
@@ -43,7 +43,7 @@ def test_sgd_without_momentum():
     orig_params = model.get_params()
     opt.step()
 
-    for name, module in model.modules_map.items():
+    for name, module in model.modules.items():
         if module.has_params:
             for k, v in module.params.items():
                 assert np.allclose(
@@ -60,7 +60,7 @@ def test_sgd_with_momentum_single_step():
     mu = 0.9
     opt = SGD(model, lr=0.1, momentum=mu)
 
-    for module in model.modules:
+    for module in model.topology:
         if module.has_params:
             for k in module.params:
                 module.grads[k] = np.ones_like(module.params[k])
@@ -70,7 +70,7 @@ def test_sgd_with_momentum_single_step():
 
     # v = mu * 0 + dw = 1
     # update = lr * v
-    for name, module in model.modules_map.items():
+    for name, module in model.modules.items():
         if module.has_params:
             for k, v in module.params.items():
                 assert np.allclose(
@@ -87,7 +87,7 @@ def test_sgd_with_momentum_two_steps():
     mu = 0.5
     opt = SGD(model, lr=0.1, momentum=mu)
 
-    for module in model.modules:
+    for module in model.topology:
         if module.has_params:
             for k in module.params:
                 module.grads[k] = np.ones_like(module.params[k])
@@ -100,7 +100,7 @@ def test_sgd_with_momentum_two_steps():
     # step 2: v = mu * 1 + 1 = 1.5
     opt.step()
 
-    for name, module in model.modules_map.items():
+    for name, module in model.modules.items():
         if module.has_params:
             for k, v in module.params.items():
                 expected = (
@@ -120,7 +120,7 @@ def test_sgd_with_dampening():
     tau = 0.5
     opt = SGD(model, lr=0.1, momentum=mu, dampening=tau)
 
-    for module in model.modules:
+    for module in model.topology:
         if module.has_params:
             for k in module.params:
                 module.grads[k] = np.ones_like(module.params[k])
@@ -129,7 +129,7 @@ def test_sgd_with_dampening():
     opt.step()
 
     # v = mu * 0 + (1 - tau) * dw = 0.5
-    for name, module in model.modules_map.items():
+    for name, module in model.modules.items():
         if module.has_params:
             for k, v in module.params.items():
                 assert np.allclose(
@@ -146,7 +146,7 @@ def test_sgd_with_nesterov():
     mu = 0.9
     opt = SGD(model, lr=0.1, momentum=mu, nesterov=True)
 
-    for module in model.modules:
+    for module in model.topology:
         if module.has_params:
             for k in module.params:
                 module.grads[k] = np.ones_like(module.params[k])
@@ -156,7 +156,7 @@ def test_sgd_with_nesterov():
 
     # v = 1
     # update = dw + mu * v = 1 + 0.9 = 1.9
-    for name, module in model.modules_map.items():
+    for name, module in model.modules.items():
         if module.has_params:
             for k, v in module.params.items():
                 assert np.allclose(
@@ -172,7 +172,7 @@ def test_sgd_maximize_flag():
 
     opt = SGD(model, lr=0.1, momentum=0.0, maximize=True)
 
-    for module in model.modules:
+    for module in model.topology:
         if module.has_params:
             for k in module.params:
                 module.grads[k] = np.ones_like(module.params[k])
@@ -180,7 +180,7 @@ def test_sgd_maximize_flag():
     orig_params = model.get_params()
     opt.step()
 
-    for name, module in model.modules_map.items():
+    for name, module in model.modules.items():
         if module.has_params:
             for k, v in module.params.items():
                 assert np.allclose(
@@ -210,13 +210,13 @@ def test_sgd_gradients_not_modified():
 
     opt = SGD(model, lr=0.1, momentum=0.9)
 
-    for module in model.modules:
+    for module in model.topology:
         if module.has_params:
             for k in module.params:
                 module.grads[k] = np.ones_like(module.params[k])
 
     grad_copies = {}
-    for module in model.modules:
+    for module in model.topology:
         if module.has_params:
             grad_copies[module] = {
                 k: v.copy() for k, v in module.grads.items()
@@ -224,7 +224,7 @@ def test_sgd_gradients_not_modified():
 
     opt.step()
 
-    for module in model.modules:
+    for module in model.topology:
         if module.has_params:
             for k, v in module.grads.items():
                 assert np.allclose(v, grad_copies[module][k])
