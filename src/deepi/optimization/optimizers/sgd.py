@@ -41,5 +41,7 @@ class SGD(Optimizer):
             v *= self.mu 
             v += (1.0 - self.tau) * dw 
             dw = dw + self.mu * v if self.nesterov else v
+        else: 
+            dw = dw.copy()
 
-        return dw
+        return self.lr * dw

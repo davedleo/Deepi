@@ -12,7 +12,7 @@ from deepi.optimization.regularization import Regularizer
 class DummyOptimizer(Optimizer):
     def direction(self, dw, buffer):
         # simply return the gradient unchanged
-        return dw.copy()
+        return self.lr * dw.copy() 
 
 
 class DummyRegularizer(Regularizer):

@@ -63,7 +63,7 @@ class Optimizer(ABC):
                     if self.regularizer is not None:
                         if self.decoupled_regularization:
                             dp = self.direction(dw, buffer)
-                            dp += self.regularizer(w)
+                            dp += self.lr * self.regularizer(w)
                         else:
                             dw_reg = dw + self.regularizer(w)
                             dp = self.direction(dw_reg, buffer)
@@ -71,7 +71,7 @@ class Optimizer(ABC):
                     else:
                         dp = self.direction(dw, buffer)
 
-                    params[k] -= self.lr * dp
+                    params[k] -= dp
 
     def get_buffer(self) -> Dict[str, Dict[str, Any]]:
         return self.buffer
