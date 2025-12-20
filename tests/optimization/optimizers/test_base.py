@@ -200,3 +200,53 @@ def test_multiple_gradients_preserved():
         if module.has_params:
             for k, v in module.grads.items():
                 assert np.allclose(v, grad_copies[module][k])
+
+
+def test_get_buffer_returns_correct_buffer():
+    """get_buffer should return the optimizer's internal buffer"""
+    model, inp, d1, r, d2 = build_test_model()
+    model.train()
+
+    opt = DummyOptimizer(
+        model,
+        lr=0.01,
+        regularizer=None,
+        decoupled_regularization=False,
+        maximize=False,
+        has_buffer=True,
+        _type="dummy"
+    )
+
+    buffer = opt.get_buffer()
+    for name in opt.buffer:
+        assert name in buffer
+        for param_name in opt.buffer[name]:
+            assert np.allclose(opt.buffer[name][param_name], buffer[name][param_name])
+
+
+def test_load_buffer_updates_optimizer_buffer():
+    """load_buffer should update the optimizer's internal buffer"""
+    model, inp, d1, r, d2 = build_test_model()
+    model.train()
+
+    opt = DummyOptimizer(
+        model,
+        lr=0.01,
+        regularizer=None,
+        decoupled_regularization=False,
+        maximize=False,
+        has_buffer=True,
+        _type="dummy"
+    )
+
+    buffer = opt.get_buffer()
+    # Modify the buffer
+    for name in buffer:
+        for param_name in buffer[name]:
+            buffer[name][param_name] = np.ones_like(buffer[name][param_name]) * 42.0
+
+    opt.load_buffer(buffer)
+
+    for name in opt.buffer:
+        for param_name in opt.buffer[name]:
+            assert np.allclose(opt.buffer[name][param_name], 42.0 * np.ones_like(opt.buffer[name][param_name]))
