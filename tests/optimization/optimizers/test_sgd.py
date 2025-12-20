@@ -3,7 +3,7 @@ import pytest
 
 from deepi import Model
 from deepi.modules import Input, Dense, ReLU
-from deepi.optimization.optimizers.sgd import SGD
+from deepi.optimization.optimizers import SGD
 
 
 # --------------------------------------------------------------------------
