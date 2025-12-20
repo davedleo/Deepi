@@ -4,7 +4,7 @@ from deepi.optimization.regularization import Regularizer
 
 class ElasticNet(Regularizer): 
 
-    def ___init__(
+    def __init__(
             self, 
             alpha: float = 0.5,
             gamma: float = 0.001

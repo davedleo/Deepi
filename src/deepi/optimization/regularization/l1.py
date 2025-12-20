@@ -4,7 +4,7 @@ from deepi.optimization.regularization import Regularizer
 
 class L1(Regularizer): 
 
-    def ___init__(
+    def __init__(
             self, 
             gamma: float = 0.001
     ): 
