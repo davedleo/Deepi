@@ -17,7 +17,6 @@ class Optimizer(ABC):
         regularizer: Optional[Regularizer],
         decoupled_regularization: bool,
         maximize: bool,
-        has_buffer: bool,
         _type: str,
     ):
         self.lr = lr
@@ -35,8 +34,8 @@ class Optimizer(ABC):
             "state": dict(),
             "params": {
                 module_id: {
-                    k: dict() if has_buffer else None
-                    for k in module.params.keys()
+                    k: dict()
+                    for k in module.params.keys() if not k.startswith("running")
                 }
                 for module_id, module in self.modules.items()
             }

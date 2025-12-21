@@ -56,7 +56,6 @@ def test_step_without_regularizer():
         regularizer=None,
         decoupled_regularization=False,
         maximize=False,
-        has_buffer=True,
         _type="dummy"
     )
 
@@ -87,7 +86,6 @@ def test_step_with_regularizer_decoupled():
         regularizer=reg,
         decoupled_regularization=True,
         maximize=False,
-        has_buffer=True,
         _type="dummy"
     )
 
@@ -118,7 +116,6 @@ def test_step_with_regularizer_coupled():
         regularizer=reg,
         decoupled_regularization=False,
         maximize=False,
-        has_buffer=True,
         _type="dummy"
     )
 
@@ -148,7 +145,6 @@ def test_maximize_sign():
         regularizer=None,
         decoupled_regularization=False,
         maximize=True,
-        has_buffer=True,
         _type="dummy"
     )
 
@@ -177,7 +173,6 @@ def test_multiple_gradients_preserved():
         regularizer=None,
         decoupled_regularization=False,
         maximize=False,
-        has_buffer=True,
         _type="dummy"
     )
 
@@ -211,7 +206,6 @@ def test_get_buffer_returns_correct_buffer():
         regularizer=None,
         decoupled_regularization=False,
         maximize=False,
-        has_buffer=True,
         _type="dummy"
     )
 
@@ -236,7 +230,6 @@ def test_load_buffer_updates_optimizer_buffer():
         regularizer=None,
         decoupled_regularization=False,
         maximize=False,
-        has_buffer=True,
         _type="dummy"
     )
 
