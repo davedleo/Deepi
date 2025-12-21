@@ -29,7 +29,7 @@ def build_test_model():
 # --------------------------------------------------------------------------
 
 def test_rmsprop_without_momentum():
-    """RMSprop without momentum behaves like gradient descent with RMS scaling"""
+    """RMSprop without momentum uses running square average scaling"""
     model = build_test_model()
     model.train()
 
@@ -43,11 +43,12 @@ def test_rmsprop_without_momentum():
     orig_params = model.get_params()
     opt.step()
 
-    # Since it's the first step, square_avg = dw^2 = 1 → sqrt = 1, update = lr * dw / sqrt = 0.1
+    # First step: square_avg = (1-alpha)*dw^2, update = lr * dw / sqrt(square_avg)
     for name, module in model.modules.items():
         if module.has_params:
             for k, w in module.params.items():
-                expected = orig_params[name][k] - 0.1 * np.ones_like(w)
+                square_avg = (1.0 - opt.alpha) * np.ones_like(w)
+                expected = orig_params[name][k] - opt.lr * np.ones_like(w) / (np.sqrt(square_avg) + opt.eps)
                 assert np.allclose(w, expected)
 
 
@@ -60,14 +61,15 @@ def test_rmsprop_with_momentum_initializes_buffers():
 
     for module_buffer in opt.buffer["params"].values():
         for buf in module_buffer.values():
-            assert "velocity" in buf
             assert "square_avg" in buf
-            assert buf["velocity"] is None or isinstance(buf["velocity"], np.ndarray)
-            assert buf["square_avg"] is None or isinstance(buf["square_avg"], np.ndarray)
+            assert isinstance(buf["square_avg"], np.ndarray)
+            if opt.mu > 0.0:
+                assert "velocity" in buf
+                assert isinstance(buf["velocity"], np.ndarray)
 
 
 def test_rmsprop_with_momentum_single_step():
-    """First RMSprop step with momentum: v = dw / sqrt(square_avg)"""
+    """First RMSprop step with momentum uses scaled gradient"""
     model = build_test_model()
     model.train()
 
@@ -81,11 +83,13 @@ def test_rmsprop_with_momentum_single_step():
     orig_params = model.get_params()
     opt.step()
 
-    # First step: square_avg = 1, sqrt = 1, v = dw / sqrt = 1 → update = lr * v = 0.1
+    # First step: v = dw / sqrt((1-alpha)*dw^2)
     for name, module in model.modules.items():
         if module.has_params:
             for k, w in module.params.items():
-                expected = orig_params[name][k] - 0.1 * np.ones_like(w)
+                square_avg = (1.0 - opt.alpha) * np.ones_like(w)
+                v = np.ones_like(w) / (np.sqrt(square_avg) + opt.eps)
+                expected = orig_params[name][k] - opt.lr * v
                 assert np.allclose(w, expected)
 
 
@@ -106,14 +110,19 @@ def test_rmsprop_two_steps_no_momentum():
 
     # Step 1: square_avg = 1, update = 0.1
     opt.step()
-    # Step 2: square_avg = alpha*1 + (1-alpha)*1 = 1 → update = 0.1
+    # Step 2: square_avg remains constant for constant gradients
     opt.step()
 
     for name, module in model.modules.items():
         if module.has_params:
             for k, w in module.params.items():
-                total_update = 0.1 + 0.1
-                expected = orig_params[name][k] - total_update * np.ones_like(w)
+                square_avg_1 = (1.0 - alpha) * np.ones_like(w)
+                square_avg_2 = alpha * square_avg_1 + (1.0 - alpha) * np.ones_like(w)
+
+                update1 = opt.lr / (np.sqrt(square_avg_1) + opt.eps)
+                update2 = opt.lr / (np.sqrt(square_avg_2) + opt.eps)
+
+                expected = orig_params[name][k] - (update1 + update2) * np.ones_like(w)
                 assert np.allclose(w, expected)
 
 
@@ -132,16 +141,21 @@ def test_rmsprop_with_momentum_two_steps():
 
     orig_params = model.get_params()
 
-    # Step 1: v1 = dw / sqrt(square_avg) = 1 → update1 = 0.1
+    # Step 1: v1 = dw / sqrt((1-alpha)*dw^2)
     opt.step()
-    # Step 2: v2 = mu * v1 + dw / sqrt(square_avg) = 0.5*1 + 1 = 1.5 → update2 = 0.15
+    # Step 2: v2 = mu*v1 + dw / sqrt((1-alpha)*dw^2)
     opt.step()
 
     for name, module in model.modules.items():
         if module.has_params:
             for k, w in module.params.items():
-                total_update = 0.1 + 0.15
-                expected = orig_params[name][k] - total_update * np.ones_like(w)
+                square_avg_1 = (1.0 - opt.alpha) * np.ones_like(w)
+                square_avg_2 = opt.alpha * square_avg_1 + (1.0 - opt.alpha) * np.ones_like(w)
+
+                v1 = 1.0 / (np.sqrt(square_avg_1) + opt.eps)
+                v2 = mu * v1 + 1.0 / (np.sqrt(square_avg_2) + opt.eps)
+
+                expected = orig_params[name][k] - opt.lr * (v1 + v2) * np.ones_like(w)
                 assert np.allclose(w, expected)
 
 
@@ -163,10 +177,9 @@ def test_rmsprop_maximize_flag():
     for name, module in model.modules.items():
         if module.has_params:
             for k, w in module.params.items():
-                assert np.allclose(
-                    w,
-                    orig_params[name][k] + 0.1 * np.ones_like(w)
-                )
+                square_avg = (1.0 - opt.alpha) * np.ones_like(w)
+                expected = orig_params[name][k] + opt.lr * np.ones_like(w) / (np.sqrt(square_avg) + opt.eps)
+                assert np.allclose(w, expected)
 
 
 def test_rmsprop_does_not_modify_gradients():

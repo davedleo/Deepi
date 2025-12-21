@@ -25,42 +25,35 @@ class RMSprop(Optimizer):
         self.centered = centered 
         self.eps = eps
 
-        for module_buffer in self.buffer["params"].values(): 
-            for buffer in module_buffer.values(): 
-                buffer["velocity"] = None
-                buffer["avg"] = None
-                buffer["square_avg"] = None
+        for module_id, module in self.modules.items(): 
+            for k, buffer in self.buffer["params"][module_id].items(): 
+                buffer["square_avg"] = np.zeros_like(module.params[k])
+
+                if self.centered:
+                    buffer["avg"] = np.zeros_like(module.params[k])
+                
+                if self.mu > 0.0:
+                    buffer["velocity"] = np.zeros_like(module.params[k])
 
     def direction(
             self, 
             dw: np.ndarray,
             buffer: Dict[str, np.ndarray]
     ) -> np.ndarray: 
-        if buffer["square_avg"] is None: 
-            buffer["square_avg"] = dw ** 2 
-            
-            if self.centered: 
-                buffer["avg"] = dw.copy()
-            if self.mu != 0.0: 
-                buffer["velocity"] = dw.copy()
-            
-            return self.lr * dw
-        
         square_avg = buffer["square_avg"]
         square_avg *= self.alpha 
         square_avg += (1.0 - self.alpha) * (dw ** 2)
 
         if self.centered: 
-            avg = buffer["avg"] 
+            avg = buffer["avg"]
             avg *= self.alpha 
-            avg += (1.0 - self.alpha) * dw 
+            avg += (1.0 - self.alpha) * dw
             square_avg = square_avg - (avg ** 2)
 
-        if self.mu != 0.0: 
+        if self.mu > 0.0: 
             v = buffer["velocity"]
             v *= self.mu 
             v += dw / (np.sqrt(square_avg) + self.eps)
-            return self.lr * v
-        
+            return self.lr * v 
         else: 
             return self.lr * dw / (np.sqrt(square_avg) + self.eps)
