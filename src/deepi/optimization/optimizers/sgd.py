@@ -23,10 +23,9 @@ class SGD(Optimizer):
         self.tau = dampening 
         self.nesterov = nesterov
 
-        if self.mu != 0.0: 
-            for module_buffer in self.buffer["params"].values(): 
-                for buffer in module_buffer.values(): 
-                    buffer["velocity"] = 0.0
+        for module_buffer in self.buffer["params"].values(): 
+            for buffer in module_buffer.values(): 
+                buffer["velocity"] = None
 
     def direction(
             self, 
@@ -35,8 +34,8 @@ class SGD(Optimizer):
     ) -> np.ndarray: 
         if self.mu != 0.0: 
             v = buffer["velocity"]
-            if isinstance(v, float): 
-                buffer["velocity"] += dw
+            if v is None: 
+                buffer["velocity"] = dw.copy()
             else:  
                 v *= self.mu 
                 v += (1.0 - self.tau) * dw 
