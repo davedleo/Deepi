@@ -15,7 +15,7 @@ class RMSprop(Optimizer):
             momentum: float = 0.0,
             alpha: float = 0.99,
             centered: bool = False,
-            eps: float = 1e-10,
+            eps: float = 1e-8,
             regularizer: Optional[Regularizer] = None,
             maximize: bool = False
     ): 

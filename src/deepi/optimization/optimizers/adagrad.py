@@ -1,0 +1,49 @@
+from typing import Dict, Optional
+import numpy as np 
+
+from deepi import Model 
+from deepi.optimization.optimizers import Optimizer 
+from deepi.optimization.regularization import Regularizer 
+
+
+class Adagrad(Optimizer): 
+
+    def __init__(
+            self,
+            model: Model, 
+            lr: float = 0.01,
+            lr_decay: float = 0.0,
+            square_sum_init: float = 0.0,
+            eps: float = 1e-10,
+            regularizer: Optional[Regularizer] = None,
+            maximize: bool = False
+    ): 
+        super().__init__(model, lr, regularizer, False, maximize, "adagrad")
+        self.lr_decay = lr_decay  
+        self.square_sum_init = square_sum_init 
+        self.eps = eps
+
+        self.buffer["state"] = {
+            "lr": lr + 0.0, # Safe copy
+            "t": 0,
+        }
+
+        for module_id, module in self.modules.items(): 
+            for k, buffer in self.buffer["params"][module_id].items(): 
+                buffer["square_sum"] = np.full_like(module.params[k], square_sum_init)
+
+    def direction(
+            self, 
+            dw: np.ndarray,
+            buffer: Dict[str, np.ndarray]
+    ) -> np.ndarray: 
+        state = self.buffer["state"]
+        state["t"] += 1 
+        state["lr"] = self.lr / (1.0 + self.lr_decay * (1.0 - state["t"]))
+
+        square_sum = buffer["square_sum"]
+        square_sum += (dw ** 2)
+
+        dw = dw / (np.sqrt(square_sum) + self.eps)
+
+        return state["lr"] * dw
