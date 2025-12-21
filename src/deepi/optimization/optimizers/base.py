@@ -32,10 +32,14 @@ class Optimizer(ABC):
         }
 
         self.buffer = {
-            module_id: {
-                k: dict() if has_buffer else None for k in module.params.keys()
+            "state": dict(),
+            "params": {
+                module_id: {
+                    k: dict() if has_buffer else None
+                    for k in module.params.keys()
+                }
+                for module_id, module in self.modules.items()
             }
-            for module_id, module in self.modules.items()
         }
 
         self._type = f"optimizer.{_type}"
@@ -52,7 +56,7 @@ class Optimizer(ABC):
         for module_id, module in self.modules.items():
             params = module.params
             grads = module.grads
-            module_buffer = self.buffer[module_id]
+            module_buffer = self.buffer["params"][module_id]
 
             for k, w in params.items():
                 # Skip running stats
@@ -76,11 +80,16 @@ class Optimizer(ABC):
     def get_buffer(self) -> Dict[str, Dict[str, Any]]:
         return self.buffer
 
-    def load_buffer(self, 
+    def load_buffer(
+            self,
             buffer_dict: Dict[str, Dict[str, Any]]
     ):
-        for module_id, buffers in buffer_dict.items():
-            if module_id in self.buffer:
-                for k, buf in buffers.items():
-                    if k in self.buffer[module_id]:
-                        self.buffer[module_id][k] = deepcopy(buf)
+        if "params" in buffer_dict:
+            for module_id, buffers in buffer_dict["params"].items():
+                if module_id in self.buffer["params"]:
+                    for k, buf in buffers.items():
+                        if k in self.buffer["params"][module_id]:
+                            self.buffer["params"][module_id][k] = deepcopy(buf)
+
+        if "state" in buffer_dict:
+            self.buffer["state"] = deepcopy(buffer_dict["state"])
