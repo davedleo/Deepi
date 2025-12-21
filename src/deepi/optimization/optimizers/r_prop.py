@@ -7,7 +7,7 @@ from deepi.optimization.optimizers import Optimizer
 from deepi.optimization.regularization import Regularizer
 
 
-class RProp(Optimizer): 
+class Rprop(Optimizer): 
 
     def __init__(
             self, 
@@ -19,7 +19,7 @@ class RProp(Optimizer):
             step_max: float = 50.0,
             maximize: bool = False
     ): 
-        super().__init__(model, lr, None, False, maximize, True, "rprop")    
+        super().__init__(model, lr, None, False, maximize, True, "r_prop")    
         self.eta_minus = eta_minus 
         self.eta_plus = eta_plus 
         self.step_min = step_min 

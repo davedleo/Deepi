@@ -1,9 +1,11 @@
 from .base import Optimizer 
-from .rprop import RProp
+from .r_prop import Rprop
+from .rms_prop import RMSprop
 from .sgd import SGD
 
 __all__ = [
     "Optimizer",
-    "RProp",
+    "Rprop",
+    "RMSprop"
     "SGD"
 ]

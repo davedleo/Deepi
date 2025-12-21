@@ -3,7 +3,7 @@ import pytest
 
 from deepi import Model
 from deepi.modules import Input, Dense, ReLU
-from deepi.optimization.optimizers import RProp
+from deepi.optimization.optimizers import Rprop
 
 
 # --------------------------------------------------------------------------
@@ -28,12 +28,12 @@ def build_test_model():
 # Tests
 # --------------------------------------------------------------------------
 
-def test_rprop_basic_step():
-    """RProp step should update params using sign of gradient"""
+def test_Rprop_basic_step():
+    """Rprop step should update params using sign of gradient"""
     model, inp, d1, r, d2 = build_test_model()
     model.train()
 
-    opt = RProp(model, lr=0.1)
+    opt = Rprop(model, lr=0.1)
     for module in model.topology:
         if module.has_params:
             for k in module.params:
@@ -50,12 +50,12 @@ def test_rprop_basic_step():
                 assert np.allclose(v, expected)
 
 
-def test_rprop_increases_eta_on_same_sign():
+def test_Rprop_increases_eta_on_same_sign():
     """Eta should increase when gradient keeps the same sign"""
     model, inp, d1, r, d2 = build_test_model()
     model.train()
 
-    opt = RProp(model, lr=0.1, eta_minus=0.5, eta_plus=2.0, step_max=10.0)
+    opt = Rprop(model, lr=0.1, eta_minus=0.5, eta_plus=2.0, step_max=10.0)
     for module in model.topology:
         if module.has_params:
             for k in module.params:
@@ -76,12 +76,12 @@ def test_rprop_increases_eta_on_same_sign():
             assert np.all(eta <= opt.step_max)
 
 
-def test_rprop_decreases_eta_on_sign_flip():
+def test_Rprop_decreases_eta_on_sign_flip():
     """Eta should decrease and dw set to zero when gradient flips sign"""
     model, inp, d1, r, d2 = build_test_model()
     model.train()
 
-    opt = RProp(model, lr=0.1, eta_minus=0.5, eta_plus=2.0, step_max=10.0)
+    opt = Rprop(model, lr=0.1, eta_minus=0.5, eta_plus=2.0, step_max=10.0)
     for module in model.topology:
         if module.has_params:
             for k in module.params:
@@ -107,12 +107,12 @@ def test_rprop_decreases_eta_on_sign_flip():
             assert np.all(dw == 0.0)
 
 
-def test_rprop_maximize_flag():
+def test_Rprop_maximize_flag():
     """maximize=True should invert the step direction"""
     model, inp, d1, r, d2 = build_test_model()
     model.train()
 
-    opt = RProp(model, lr=0.1, maximize=True)
+    opt = Rprop(model, lr=0.1, maximize=True)
     for module in model.topology:
         if module.has_params:
             for k in module.params:
@@ -128,12 +128,12 @@ def test_rprop_maximize_flag():
                 assert np.all(v >= orig_params[name][k])
 
 
-def test_rprop_buffer_initialized():
-    """RProp should initialize dw and eta buffers correctly"""
+def test_Rprop_buffer_initialized():
+    """Rprop should initialize dw and eta buffers correctly"""
     model, inp, d1, r, d2 = build_test_model()
     model.train()
 
-    opt = RProp(model, lr=0.1)
+    opt = Rprop(model, lr=0.1)
     buffer = opt.get_buffer()
 
     for module_id, module_buffer in buffer.items():
@@ -146,12 +146,12 @@ def test_rprop_buffer_initialized():
             assert np.all(buf["eta"] == 0.1)
 
 
-def test_rprop_gradients_not_modified():
-    """RProp should not modify gradient arrays in-place"""
+def test_Rprop_gradients_not_modified():
+    """Rprop should not modify gradient arrays in-place"""
     model, inp, d1, r, d2 = build_test_model()
     model.train()
 
-    opt = RProp(model, lr=0.1)
+    opt = Rprop(model, lr=0.1)
     for module in model.topology:
         if module.has_params:
             for k in module.params:
