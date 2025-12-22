@@ -24,7 +24,7 @@ class Rprop(Optimizer):
         self.max_step = max_step
 
         for module_id, module in self.modules.items(): 
-            for k, buffer in self.buffer["params"][module_id].items(): 
+            for k, buffer in self.buffer[module_id].items(): 
                 buffer["dw_prev"] = np.zeros_like(module.params[k])
                 buffer["eta"] = np.full_like(module.params[k], lr)
 

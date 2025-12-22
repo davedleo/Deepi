@@ -35,7 +35,7 @@ def test_rprop_initializes_buffers():
 
     opt = Rprop(model, lr=0.01)
 
-    for module_buffer in opt.buffer["params"].values():
+    for module_buffer in opt.buffer.values():
         for buf in module_buffer.values():
             assert "dw_prev" in buf
             assert "eta" in buf
@@ -62,7 +62,7 @@ def test_rprop_single_step_positive_gradients():
     for name, module in model.modules.items():
         if module.has_params:
             for k, w in module.params.items():
-                eta = opt.buffer["params"][name][k]["eta"]
+                eta = opt.buffer[name][k]["eta"]
                 expected_step = np.sign(module.grads[k]) * eta
                 expected_params = orig_params[name][k] - expected_step
                 assert np.allclose(w, expected_params)
@@ -90,13 +90,13 @@ def test_rprop_step_size_adjustment():
                 module.grads[k] = np.ones_like(module.params[k])
 
     prev_eta = {name: {k: buf["eta"].copy() for k, buf in module_buffer.items()}
-                for name, module_buffer in opt.buffer["params"].items()}
+                for name, module_buffer in opt.buffer.items()}
 
     opt.step()
 
     for name, module in model.modules.items():
         if module.has_params:
-            for k, buf in opt.buffer["params"][name].items():
+            for k, buf in opt.buffer[name].items():
                 assert np.all(buf["eta"] <= opt.max_step)
                 assert np.all(buf["eta"] >= prev_eta[name][k])
 
@@ -122,11 +122,11 @@ def test_rprop_negative_gradient_decreases_eta():
                 module.grads[k] = -np.ones_like(module.params[k])
 
     prev_eta = {name: {k: buf["eta"].copy() for k, buf in module_buffer.items()}
-                for name, module_buffer in opt.buffer["params"].items()}
+                for name, module_buffer in opt.buffer.items()}
 
     opt.step()
 
-    for name, module_buffer in opt.buffer["params"].items():
+    for name, module_buffer in opt.buffer.items():
         for k, buf in module_buffer.items():
             assert np.all(buf["eta"] <= prev_eta[name][k])
             assert np.all(buf["eta"] >= opt.min_step)
@@ -151,7 +151,7 @@ def test_rprop_maximize_flag():
     for name, module in model.modules.items():
         if module.has_params:
             for k, w in module.params.items():
-                eta = opt.buffer["params"][name][k]["eta"]
+                eta = opt.buffer[name][k]["eta"]
                 expected_step = np.sign(module.grads[k]) * eta  
                 expected_params = orig_params[name][k] + expected_step
                 assert np.allclose(w, expected_params)

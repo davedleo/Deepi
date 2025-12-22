@@ -22,28 +22,23 @@ class Adagrad(Optimizer):
         self.lr_decay = lr_decay  
         self.square_sum_init = square_sum_init 
         self.eps = eps
-
-        self.buffer["state"] = {
-            "lr": lr + 0.0, # Safe copy
-            "t": 0,
-        }
-
         for module_id, module in self.modules.items(): 
-            for k, buffer in self.buffer["params"][module_id].items(): 
+            for k, buffer in self.buffer[module_id].items(): 
                 buffer["square_sum"] = np.full_like(module.params[k], square_sum_init)
+                buffer["lr"] = lr + 0.0 # Safe copy 
+                buffer["t"] = 0
 
     def direction(
             self, 
             dw: np.ndarray,
             buffer: Dict[str, np.ndarray]
     ) -> np.ndarray: 
-        state = self.buffer["state"]
-        state["t"] += 1 
-        state["lr"] = self.lr / (1.0 + self.lr_decay * (1.0 - state["t"]))
+        buffer["t"] += 1
+        buffer["lr"] = self.lr / (1.0 + self.lr_decay * (1.0 - buffer["t"]))
 
         square_sum = buffer["square_sum"]
         square_sum += (dw ** 2)
 
         dw = dw / (np.sqrt(square_sum) + self.eps)
 
-        return state["lr"] * dw
+        return buffer["lr"] * dw

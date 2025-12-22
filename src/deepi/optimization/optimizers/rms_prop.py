@@ -26,7 +26,7 @@ class RMSprop(Optimizer):
         self.eps = eps
 
         for module_id, module in self.modules.items(): 
-            for k, buffer in self.buffer["params"][module_id].items(): 
+            for k, buffer in self.buffer[module_id].items(): 
                 buffer["square_avg"] = np.zeros_like(module.params[k])
 
                 if self.centered:

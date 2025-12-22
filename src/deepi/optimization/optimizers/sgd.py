@@ -23,7 +23,7 @@ class SGD(Optimizer):
         self.tau = dampening 
         self.nesterov = nesterov
 
-        for module_buffer in self.buffer["params"].values(): 
+        for module_buffer in self.buffer.values(): 
             for buffer in module_buffer.values(): 
                 buffer["velocity"] = None
 

@@ -59,7 +59,7 @@ def test_rmsprop_with_momentum_initializes_buffers():
 
     opt = RMSprop(model, lr=0.01, momentum=0.9)
 
-    for module_buffer in opt.buffer["params"].values():
+    for module_buffer in opt.buffer.values():
         for buf in module_buffer.values():
             assert "square_avg" in buf
             assert isinstance(buf["square_avg"], np.ndarray)

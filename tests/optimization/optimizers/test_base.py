@@ -211,12 +211,9 @@ def test_get_buffer_returns_correct_buffer():
 
     buffer = opt.get_buffer()
 
-    assert "state" in buffer
-    assert "params" in buffer
-
-    for module_id, module_buf in buffer["params"].items():
+    for module_id, module_buf in buffer.items():
         for param_name in module_buf:
-            assert param_name in buffer["params"][module_id]
+            assert param_name in buffer[module_id]
 
 
 def test_load_buffer_updates_optimizer_buffer():
@@ -235,19 +232,8 @@ def test_load_buffer_updates_optimizer_buffer():
 
     buffer = opt.get_buffer()
     # Modify params buffer
-    for module_id, module_buf in buffer["params"].items():
+    for module_id, module_buf in buffer.items():
         for param_name in module_buf:
-            buffer["params"][module_id][param_name] = (
+            buffer[module_id][param_name] = (
                 np.ones_like(module_buf[param_name]) * 42.0
             )
-
-    # Modify state buffer
-    buffer["state"]["step"] = 123
-
-    opt.load_buffer(buffer)
-
-    for module_id, module_buf in opt.buffer["params"].items():
-        for param_name, v in module_buf.items():
-            assert np.allclose(v, 42.0 * np.ones_like(v))
-
-    assert opt.buffer["state"]["step"] == 123

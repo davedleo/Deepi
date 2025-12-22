@@ -28,21 +28,26 @@ def build_test_model():
 # Tests
 # --------------------------------------------------------------------------
 
-def test_adagrad_initializes_square_sum():
-    """Adagrad initializes square_sum buffers correctly"""
+def test_adagrad_initializes_buffers():
+    """Adagrad initializes square_sum, lr, and t buffers correctly"""
     model = build_test_model()
     model.train()
 
     opt = Adagrad(model, lr=0.1, square_sum_init=0.5)
 
-    for module_buffer in opt.buffer["params"].values():
-        for buf in module_buffer.values():
+    for module_id, module_buffer in opt.buffer.items():
+        module = opt.modules[module_id]
+        for k, buf in module_buffer.items():
             assert "square_sum" in buf
-            assert np.allclose(buf["square_sum"], 0.5 * np.ones_like(buf["square_sum"]))
+            assert "lr" in buf
+            assert "t" in buf
+            assert np.allclose(buf["square_sum"], 0.5 * np.ones_like(module.params[k]))
+            assert np.allclose(buf["lr"], 0.1)
+            assert buf["t"] == 0
 
 
 def test_adagrad_single_step_update():
-    """Adagrad updates parameters correctly for first step"""
+    """Adagrad updates parameters correctly for first step with new direction method"""
     model = build_test_model()
     model.train()
 
@@ -56,12 +61,13 @@ def test_adagrad_single_step_update():
     orig_params = model.get_params()
     opt.step()
 
-    # First step: square_sum = 0 + 1^2 = 1 → update = lr * dw / sqrt(square_sum + eps) ≈ 0.1
-    for name, module in model.modules.items():
-        if module.has_params:
-            for k, w in module.params.items():
-                expected = orig_params[name][k] - 0.1 * np.ones_like(w)
-                assert np.allclose(w, expected, atol=1e-7)
+    for module_id, module in opt.modules.items():
+        for k, w in module.params.items():
+            buf = opt.buffer[module_id][k]
+            expected_update = 0.1 * np.ones_like(w) / (np.sqrt(1.0) + 1e-8)
+            expected = orig_params[module_id][k] - expected_update
+            assert np.allclose(w, expected, atol=1e-7)
+            assert buf["t"] == 1
 
 
 def test_adagrad_multiple_steps_accumulate_square_sum():
@@ -78,17 +84,17 @@ def test_adagrad_multiple_steps_accumulate_square_sum():
 
     orig_params = model.get_params()
 
-    # Step 1: square_sum = 1 → update1 = 0.1
     opt.step()
-    # Step 2: square_sum = 1 + 1 = 2 → update2 = 0.1 / sqrt(2) ≈ 0.0707107
     opt.step()
 
-    for name, module in model.modules.items():
-        if module.has_params:
-            for k, w in module.params.items():
-                total_update = 0.1 + 0.1 / np.sqrt(2)
-                expected = orig_params[name][k] - total_update * np.ones_like(w)
-                assert np.allclose(w, expected, atol=1e-7)
+    for module_id, module in opt.modules.items():
+        for k, w in module.params.items():
+            buf = opt.buffer[module_id][k]
+            # After two steps, square_sum = 2, first update = 0.1/1, second update = 0.1/√2
+            total_update = 0.1 / (np.sqrt(1.0) + 1e-8) + 0.1 / (np.sqrt(2.0) + 1e-8)
+            expected = orig_params[module_id][k] - total_update * np.ones_like(w)
+            assert np.allclose(w, expected, atol=1e-7)
+            assert buf["t"] == 2
 
 
 def test_adagrad_maximize_flag():
@@ -106,13 +112,11 @@ def test_adagrad_maximize_flag():
     orig_params = model.get_params()
     opt.step()
 
-    for name, module in model.modules.items():
-        if module.has_params:
-            for k, w in module.params.items():
-                assert np.allclose(
-                    w,
-                    orig_params[name][k] + 0.1 * np.ones_like(w)
-                )
+    for module_id, module in opt.modules.items():
+        for k, w in module.params.items():
+            expected_update = 0.1 * np.ones_like(w) / (np.sqrt(1.0) + 1e-10)
+            expected = orig_params[module_id][k] + expected_update
+            assert np.allclose(w, expected, atol=1e-7)
 
 
 def test_adagrad_does_not_modify_gradients():

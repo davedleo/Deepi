@@ -35,7 +35,7 @@ def test_adadelta_initializes_buffers():
 
     opt = Adadelta(model)
 
-    for module_buffer in opt.buffer["params"].values():
+    for module_buffer in opt.buffer.values():
         for buf in module_buffer.values():
             assert "square_dw_avg" in buf
             assert "square_delta_avg" in buf

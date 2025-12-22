@@ -59,7 +59,7 @@ def test_sgd_with_momentum_initializes_velocity():
 
     opt = SGD(model, lr=0.01, momentum=0.9)
 
-    for module_buffer in opt.buffer["params"].values():
+    for module_buffer in opt.buffer.values():
         for buf in module_buffer.values():
             assert "velocity" in buf
             assert buf["velocity"] is None or isinstance(buf["velocity"], np.ndarray)

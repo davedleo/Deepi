@@ -26,22 +26,21 @@ class Adam(Optimizer):
         self.amsgrad = amsgrad
         self.eps = eps
 
-        self.buffer["state"] = {"t": 0}
-
         for module_id, module in self.modules.items(): 
-            for k, buffer in self.buffer["params"][module_id].items(): 
+            for k, buffer in self.buffer[module_id].items(): 
+                buffer["t"] = 0
                 buffer["velocity"] = np.zeros_like(module.params[k])
                 buffer["square_avg"] = np.zeros_like(module.params[k])
                 if self.amsgrad: 
-                    self.buffer["square_avg_max"] = np.zeros_like(module.params[k])
+                    buffer["square_avg_max"] = np.zeros_like(module.params[k])
 
     def direction(
             self, 
             dw: np.ndarray,
             buffer: Dict[str, np.ndarray]
     ) -> np.ndarray: 
-        self.buffer["state"]["t"] += 1
-        t = self.buffer["state"]["t"]
+        buffer["t"] += 1
+        t = buffer["t"]
 
         velocity = buffer["velocity"]
         velocity *= self.beta1 
