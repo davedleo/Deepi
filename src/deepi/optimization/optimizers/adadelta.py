@@ -13,7 +13,7 @@ class Adadelta(Optimizer):
             model: Model, 
             lr: float = 1.0,
             rho: float = 0.9,
-            eps: float = 1e-10,
+            eps: float = 1e-6,
             regularizer: Optional[Regularizer] = None,
             maximize: bool = False
     ): 
@@ -21,18 +21,24 @@ class Adadelta(Optimizer):
         self.rho = rho
         self.eps = eps
 
-        for module_buffer in self.buffer["params"].values(): 
-            for buffer in module_buffer.values(): 
-                buffer["square_dw_avg"] = None
-                buffer["square_delta_avg"] = None
+        for module_id, module in self.modules.items(): 
+            for k, buffer in self.buffer["params"][module_id].items(): 
+                buffer["square_dw_avg"] = np.zeros_like(module.params[k])
+                buffer["square_delta_avg"] = np.zeros_like(module.params[k])
 
     def direction(
             self, 
             dw: np.ndarray,
             buffer: Dict[str, np.ndarray]
     ) -> np.ndarray: 
-        if buffer["square_dw_avg"] is None: 
-            ...
+        square_dw_avg = buffer["square_dw_avg"]
+        square_delta_avg = buffer["square_delta_avg"]
 
+        square_dw_avg *= self.rho 
+        square_dw_avg += (1.0 - self.rho) * (dw ** 2)
 
-        return 
+        delta = dw * np.sqrt(square_delta_avg + self.eps) / np.sqrt(square_dw_avg + self.eps) 
+        square_delta_avg *= self.rho 
+        square_delta_avg += (1.0 - self.rho) * (delta ** 2) 
+
+        return self.lr * delta
