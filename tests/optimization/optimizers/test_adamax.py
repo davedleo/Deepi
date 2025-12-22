@@ -3,7 +3,7 @@ import pytest
 
 from deepi import Model
 from deepi.modules import Input, Dense, ReLU
-from deepi.optimization.optimizers import Adam
+from deepi.optimization.optimizers import Adamax
 
 
 # --------------------------------------------------------------------------
@@ -28,35 +28,33 @@ def build_test_model():
 # Tests
 # --------------------------------------------------------------------------
 
-def test_adam_initializes_buffers():
-    """Adam initializes velocity and squared average"""
+def test_adamax_initializes_buffers():
+    """Adamax initializes velocity and dw_max buffers"""
     model = build_test_model()
     model.train()
 
-    opt = Adam(model)
+    opt = Adamax(model)
 
     for module_buffer in opt.buffer.values():
         for buf in module_buffer.values():
-            assert "velocity" in buf
-            assert "square_avg" in buf
             assert "t" in buf
+            assert "velocity" in buf
+            assert "dw_max" in buf
             assert isinstance(buf["velocity"], np.ndarray)
-            assert isinstance(buf["square_avg"], np.ndarray)
-            if opt.amsgrad:
-                assert "square_avg_max" in buf
-                assert isinstance(buf["square_avg_max"], np.ndarray)
+            assert isinstance(buf["dw_max"], np.ndarray)
+            assert buf["t"] == 0
 
 
-def test_adam_single_step():
-    """First Adam step uses bias-corrected velocity and square_avg"""
+def test_adamax_single_step():
+    """First Adamax step uses bias-corrected velocity and max-based scaling"""
     model = build_test_model()
     model.train()
 
-    lr = 0.001
+    lr = 0.002
     beta1 = 0.9
     beta2 = 0.999
     eps = 1e-8
-    opt = Adam(model, lr=lr, beta1=beta1, beta2=beta2, eps=eps)
+    opt = Adamax(model, lr=lr, beta1=beta1, beta2=beta2, eps=eps)
 
     for module in model.topology:
         if module.has_params:
@@ -73,27 +71,25 @@ def test_adam_single_step():
 
                 # velocity = (1-beta1)*dw
                 velocity = (1.0 - beta1) * dw
-                # bias correction
-                velocity_hat = velocity / (1.0 - beta1)
+                velocity_hat = velocity / (1.0 - beta1 ** 1)
 
-                # square_avg = (1-beta2)*dw^2
-                square_avg = (1.0 - beta2) * (dw ** 2)
-                square_avg_hat = square_avg / (1.0 - beta2)
+                # dw_max = abs(dw) + eps
+                dw_max = np.abs(dw) + eps
 
-                expected = orig_params[name][k] - lr * velocity_hat / (np.sqrt(square_avg_hat) + eps)
+                expected = orig_params[name][k] - lr * velocity_hat / dw_max
                 assert np.allclose(w, expected)
 
 
-def test_adam_two_steps():
-    """Adam accumulates velocity and squared gradients over steps"""
+def test_adamax_two_steps():
+    """Adamax accumulates velocity and dw_max over multiple steps"""
     model = build_test_model()
     model.train()
 
-    lr = 0.01
-    beta1 = 0.5
-    beta2 = 0.9
+    lr = 0.002
+    beta1 = 0.9
+    beta2 = 0.999
     eps = 1e-8
-    opt = Adam(model, lr=lr, beta1=beta1, beta2=beta2, eps=eps)
+    opt = Adamax(model, lr=lr, beta1=beta1, beta2=beta2, eps=eps)
 
     for module in model.topology:
         if module.has_params:
@@ -114,51 +110,26 @@ def test_adam_two_steps():
 
                 # ---- step 1 ----
                 v1 = (1.0 - beta1) * dw
-                s1 = (1.0 - beta2) * (dw ** 2)
-                v_hat1 = v1 / (1.0 - beta1)
-                s_hat1 = s1 / (1.0 - beta2)
-                update1 = lr * v_hat1 / (np.sqrt(s_hat1) + eps)
+                v_hat1 = v1 / (1.0 - beta1 ** 1)
+                dw_max1 = np.abs(dw) + eps
+                update1 = lr * v_hat1 / dw_max1
 
                 # ---- step 2 ----
                 v2 = beta1 * v1 + (1.0 - beta1) * dw
-                s2 = beta2 * s1 + (1.0 - beta2) * (dw ** 2)
                 v_hat2 = v2 / (1.0 - beta1 ** 2)
-                s_hat2 = s2 / (1.0 - beta2 ** 2)
-                update2 = lr * v_hat2 / (np.sqrt(s_hat2) + eps)
+                dw_max2 = np.maximum(beta2 * dw_max1, np.abs(dw) + eps)
+                update2 = lr * v_hat2 / dw_max2
 
                 expected = orig_params[name][k] - (update1 + update2)
                 assert np.allclose(w, expected)
 
 
-def test_adam_amsgrad():
-    """Adam with amsgrad keeps square_avg_max correctly"""
-    model = build_test_model()
-    model.train()
-
-    lr = 0.01
-    beta1 = 0.9
-    beta2 = 0.999
-    eps = 1e-8
-    opt = Adam(model, lr=lr, beta1=beta1, beta2=beta2, eps=eps, amsgrad=True)
-
-    for module in model.topology:
-        if module.has_params:
-            for k in module.params:
-                module.grads[k] = np.ones_like(module.params[k])
-
-    opt.step()
-
-    for module_buffer in opt.buffer.values():
-        for buf in module_buffer.values():
-            assert np.all(buf["square_avg_max"] >= buf["square_avg"])
-
-
-def test_adam_maximize_flag():
+def test_adamax_maximize_flag():
     """maximize=True inverts update direction"""
     model = build_test_model()
     model.train()
 
-    opt = Adam(model, maximize=True)
+    opt = Adamax(model, maximize=True)
 
     for module in model.topology:
         if module.has_params:
@@ -173,19 +144,18 @@ def test_adam_maximize_flag():
             for k, w in module.params.items():
                 dw = np.ones_like(w)
                 velocity = (1.0 - opt.beta1) * dw
-                velocity_hat = velocity / (1.0 - opt.beta1)
-                square_avg = (1.0 - opt.beta2) * (dw ** 2)
-                square_avg_hat = square_avg / (1.0 - opt.beta2)
-                expected = orig_params[name][k] + opt.lr * velocity_hat / (np.sqrt(square_avg_hat) + opt.eps)
+                velocity_hat = velocity / (1.0 - opt.beta1 ** 1)
+                dw_max = np.abs(dw) + opt.eps
+                expected = orig_params[name][k] + opt.lr * velocity_hat / dw_max
                 assert np.allclose(w, expected)
 
 
-def test_adam_does_not_modify_gradients():
-    """Adam must not modify gradients in-place"""
+def test_adamax_does_not_modify_gradients():
+    """Adamax must not modify gradients in-place"""
     model = build_test_model()
     model.train()
 
-    opt = Adam(model)
+    opt = Adamax(model)
 
     grad_copies = {}
     for module in model.topology:
