@@ -3,6 +3,7 @@ from .adadelta import Adadelta
 from .adagrad import Adagrad
 from .adam import Adam
 from .adamax import Adamax
+from .muon import Muon
 from .n_adam import NAdam
 from .r_adam import RAdam
 from .r_prop import Rprop
@@ -15,6 +16,7 @@ __all__ = [
     "Adagrad",
     "Adam",
     "Adamax",
+    "Muon",
     "NAdam",
     "RAdam",
     "Rprop",
