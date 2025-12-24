@@ -85,3 +85,9 @@ class Optimizer(ABC):
                 for k, buf in buffers.items():
                     if k in self.buffer[module_id]:
                         self.buffer[module_id][k] = deepcopy(buf)
+
+    def get_lr(self) -> float: 
+        return self.lr 
+    
+    def update_lr(self, lr: float): 
+        self.lr = lr
