@@ -89,5 +89,5 @@ class Optimizer(ABC):
     def get_lr(self) -> float: 
         return self.lr 
     
-    def update_lr(self, lr: float): 
+    def load_lr(self, lr: float): 
         self.lr = lr
