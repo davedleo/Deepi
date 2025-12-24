@@ -99,7 +99,7 @@ def test_constant_step_at_milestone():
         _type="dummy"
     )
 
-    sched = Constant(opt, factor=0.5, milestone=2)
+    sched = Constant(opt, factor=0.5, milestone=1)
 
     sched.step()  # t = 1 < milestone
     assert pytest.approx(opt.lr) == 0.5
@@ -125,7 +125,7 @@ def test_constant_milestone_one():
         _type="dummy"
     )
 
-    sched = Constant(opt, factor=0.1, milestone=1)
+    sched = Constant(opt, factor=0.1, milestone=0)
 
     sched.step()
     assert pytest.approx(opt.lr) == 0.3

@@ -7,7 +7,7 @@ from .linear import Linear
 from .multi_step import MultiStep 
 from .multiplicative import Multiplicative
 # from .one_cycle import OneCycle  
-# from .polynomial import Polynomial
+from .polynomial import Polynomial
 from .step import Step
 
 __all__ = [
@@ -20,6 +20,6 @@ __all__ = [
     "MultiStep",
     "Multiplicative",
     # "OneCycle",
-    # "Polynomial",
+    "Polynomial",
     "Step"
 ]
