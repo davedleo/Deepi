@@ -8,7 +8,7 @@ class Huber(Loss):
         super().__init__("huber", reduction)
         self.delta = float(delta)
 
-    def transform(self, y_pred: np.ndarray, y_true: np.ndarray) -> np.ndarray:
+    def forward(self, y_pred: np.ndarray, y_true: np.ndarray) -> np.ndarray:
         diff = y_pred - y_true
         abs_diff = np.abs(diff)
         loss_elem = abs_diff

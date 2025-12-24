@@ -10,7 +10,7 @@ class DummyLoss(Loss):
     def __init__(self, reduction=None):
         super().__init__("dummy", reduction=reduction)
 
-    def transform(self, y, y_hat):
+    def forward(self, y, y_hat):
         # element-wise squared error
         return (y_hat - y) ** 2
 
@@ -29,7 +29,7 @@ def test_forward_exact(reduction):
     y = np.array([[1.0, 2.0, 3.0]])
     y_hat = np.array([[1.5, 1.5, 3.0]])
 
-    loss = m.forward(y_hat, y)
+    loss = m(y_hat, y)
 
     elementwise = (y_hat - y) ** 2
     if reduction is None:
@@ -54,7 +54,7 @@ def test_backward_exact(reduction):
     m.train()
     y = np.array([[1.0, 2.0, 3.0]])
     y_hat = np.array([[1.5, 1.5, 3.0]])
-    m.forward(y_hat, y)
+    m(y_hat, y)
 
     grad = m.backward()
 
@@ -74,7 +74,7 @@ def test_backward_accumulation():
     m.train()
     y = np.array([[1.0, 2.0]])
     y_hat = np.array([[2.0, 1.0]])
-    m.forward(y_hat, y)
+    m(y_hat, y)
 
     grad1 = m.backward()
     grad2 = m.backward()
@@ -95,13 +95,13 @@ def test_train_eval_mode_caching():
 
     m = DummyLoss(reduction="mean")
     m.train()
-    m.forward(y_hat, y)
+    m(y_hat, y)
     assert m.x is not None
     assert m.y is not None
 
     m.clear()  # clear cache before switching to eval
     m.eval()
-    m.forward(y_hat, y)
+    m(y_hat, y)
     assert m.x is None
     assert m.y is None
 
@@ -115,7 +115,7 @@ def test_clear_resets():
 
     m = DummyLoss(reduction="mean")
     m.train()
-    m.forward(y_hat, y)
+    m(y_hat, y)
     m.backward()
 
     m.clear()

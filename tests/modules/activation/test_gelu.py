@@ -11,7 +11,7 @@ from deepi.modules.activation.gelu import GELU
 def test_forward_exact(approximate):
     m = GELU(approximate=approximate)
     x = np.array([-2.0, -1.0, 0.0, 1.0, 2.0])
-    y = m.forward(x)
+    y = m(x)
     if approximate:
         x3 = x ** 3
         inner = np.sqrt(2 / np.pi) * (x + 0.044715 * x3)
@@ -25,7 +25,7 @@ def test_backward_exact(approximate):
     m = GELU(approximate=approximate)
     m.train()
     x = np.array([-2.0, -1.0, 0.0, 1.0, 2.0])
-    m.forward(x)
+    m(x)
     dy = np.ones_like(x)
     dx = m.gradients(dy)
     if approximate:
@@ -46,7 +46,7 @@ def test_backward_accumulation(approximate):
     m = GELU(approximate=approximate)
     m.train()
     x = np.array([-1.0, 0.5, 2.0])
-    m.forward(x)
+    m(x)
     dy1 = np.array([1.0, 2.0, 3.0])
     dy2 = np.array([4.0, 5.0, 6.0])
     m.backward(dy1)
@@ -71,7 +71,7 @@ def test_eval_mode_no_cache(approximate):
     m = GELU(approximate=approximate)
     m.eval()
     x = np.array([-1.0, 0.0, 1.0])
-    y = m.forward(x)
+    y = m(x)
     assert m.x is None and m.y is None, "Cache should not store values in eval mode"
 
 @pytest.mark.parametrize("approximate", [True, False])
@@ -79,7 +79,7 @@ def test_train_mode_cache(approximate):
     m = GELU(approximate=approximate)
     m.train()
     x = np.array([-1.0, 0.0, 1.0])
-    y = m.forward(x)
+    y = m(x)
     assert np.allclose(m.x, x)
     assert np.allclose(m.y, y)
 
@@ -88,7 +88,7 @@ def test_clear_resets(approximate):
     m = GELU(approximate=approximate)
     m.train()
     x = np.array([-1.0, 0.0, 1.0])
-    m.forward(x)
+    m(x)
     dy = np.array([1.0, 2.0, 3.0])
     m.backward(dy)
     m.clear()

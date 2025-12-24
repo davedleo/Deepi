@@ -6,7 +6,7 @@ class SiLU(Activation):
     def __init__(self):
         super().__init__("silu")
 
-    def transform(self, x: np.ndarray) -> np.ndarray:
+    def forward(self, x: np.ndarray) -> np.ndarray:
         sigmoid_x = np.empty_like(x, np.float64)
         mask = x >= 0
         sigmoid_x[mask] = 1.0 / (1.0 + np.exp(-x[mask]))

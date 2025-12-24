@@ -23,7 +23,7 @@ class Module(ABC):
         self.grads: Dict[str, np.ndarray] = defaultdict(lambda: 0.0)
 
     @abstractmethod
-    def transform(self, x: ArrayOrTuple) -> ArrayOrTuple:
+    def forward(self, x: ArrayOrTuple) -> ArrayOrTuple:
         """Forward computation: x can be a single array or a tuple of arrays."""
         pass
 
@@ -32,8 +32,8 @@ class Module(ABC):
         """Backward computation: returns gradient(s) w.r.t inputs."""
         pass
 
-    def forward(self, x: ArrayOrTuple) -> ArrayOrTuple: 
-        y = self.transform(x)
+    def __call__(self, x: ArrayOrTuple) -> ArrayOrTuple: 
+        y = self.forward(x)
 
         if self._is_training: 
             self.x = x # No inplace operations by design

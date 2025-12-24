@@ -13,11 +13,11 @@ def test_forward_exact(reduction, alpha):
     y = np.array([[0.0, 1.0, 2.0],
                   [2.0, 1.0, 0.0]])
 
-    loss = loss_fn.forward(y_hat, y)
+    loss = loss_fn(y_hat, y)
 
     diff = y_hat - y
     l1 = np.abs(diff).sum(axis=1)
-    l2 = np.sqrt((diff ** 2).sum(axis=1))
+    l2 = (diff ** 2).sum(axis=1)
     per_sample = (1.0 - alpha) * l1 + alpha * l2
 
     if reduction is None:
@@ -41,13 +41,12 @@ def test_backward_exact(reduction, alpha):
     y = np.array([[0.0, 1.0, 2.0],
                   [2.0, 1.0, 0.0]])
 
-    loss_fn.forward(y_hat, y)
+    loss_fn(y_hat, y)
     grad = loss_fn.backward()
 
     diff = y_hat - y
-    l2_norm = np.sqrt(np.sum(diff**2, axis=1, keepdims=True)) + loss_fn.eps
     grad_l1 = np.sign(diff)
-    grad_l2 = diff / l2_norm
+    grad_l2 = 2.0 * diff
     expected = (1.0 - alpha) * grad_l1 + alpha * grad_l2
 
     if reduction == "mean":
@@ -63,7 +62,7 @@ def test_forward_eval_mode_no_cache():
     y_hat = np.array([[1.0, 2.0]])
     y = np.array([[2.0, 3.0]])
 
-    loss = loss_fn.forward(y_hat, y)
+    loss = loss_fn(y_hat, y)
     assert loss_fn.x is None
     assert loss_fn.y is None
 
@@ -75,7 +74,7 @@ def test_forward_train_mode_caches():
     y_hat = np.array([[1.0, 2.0]])
     y = np.array([[2.0, 3.0]])
 
-    loss = loss_fn.forward(y_hat, y)
+    loss = loss_fn(y_hat, y)
     assert np.allclose(loss_fn.x[0], y_hat)
     assert np.allclose(loss_fn.x[1], y)
     assert np.allclose(loss_fn.y, loss)
@@ -88,7 +87,7 @@ def test_clear_resets():
     y_hat = np.array([[1.0, 2.0]])
     y = np.array([[2.0, 3.0]])
 
-    loss_fn.forward(y_hat, y)
+    loss_fn(y_hat, y)
     loss_fn.backward()
 
     loss_fn.clear()

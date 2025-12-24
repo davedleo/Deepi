@@ -10,7 +10,7 @@ def test_forward_exact():
     beta = 1.0
     m = Swish(beta=beta)
     x = np.array([-10.0, -1.0, 0.0, 1.0, 10.0])
-    y = m.forward(x)
+    y = m(x)
     z = beta * x
     sigmoid_z = np.empty_like(z)
     mask = z >= 0
@@ -25,7 +25,7 @@ def test_backward_exact():
     m = Swish(beta=beta)
     m.train()
     x = np.array([-2.0, -0.5, 0.0, 0.5, 2.0])
-    m.forward(x)
+    m(x)
     dy = np.ones_like(x)
     z = beta * x
     sigmoid_z = np.empty_like(z)
@@ -43,7 +43,7 @@ def test_backward_accumulation():
     m = Swish(beta=beta)
     m.train()
     x = np.array([-1.0, 0.0, 1.0])
-    m.forward(x)
+    m(x)
     dy1 = np.array([1.0, 2.0, 3.0])
     dy2 = np.array([4.0, 5.0, 6.0])
     m.backward(dy1)
@@ -62,14 +62,14 @@ def test_eval_mode_no_cache():
     m = Swish()
     m.eval()
     x = np.array([-1.0, 0.0, 1.0])
-    y = m.forward(x)
+    y = m(x)
     assert m.x is None and m.y is None, "Cache should not store values in eval mode"
 
 def test_train_mode_cache():
     m = Swish()
     m.train()
     x = np.array([-1.0, 0.0, 1.0])
-    y = m.forward(x)
+    y = m(x)
     assert np.allclose(m.x, x)
     assert np.allclose(m.y, y)
 
@@ -77,7 +77,7 @@ def test_clear_resets():
     m = Swish()
     m.train()
     x = np.array([-1.0, 0.0, 1.0])
-    m.forward(x)
+    m(x)
     dy = np.array([1.0, 2.0, 3.0])
     m.backward(dy)
     m.clear()

@@ -12,7 +12,7 @@ class Input(Flow):
     def generate_sample(self) -> np.ndarray: 
         return np.empty((1,) + self.in_shape, dtype=np.float64)
 
-    def transform(self, x: np.ndarray) -> np.ndarray: 
+    def forward(self, x: np.ndarray) -> np.ndarray: 
         return x
     
     def gradients(self, dy: np.ndarray):

@@ -8,7 +8,7 @@ class Add(Flow):
     def __init__(self): 
         super().__init__("add")
 
-    def transform(self, xs: Tuple[np.ndarray, ...]) -> np.ndarray: 
+    def forward(self, xs: Tuple[np.ndarray, ...]) -> np.ndarray: 
         return sum(xs)
     
     def gradients(self, dy: np.ndarray) -> Tuple[np.ndarray, ...]:

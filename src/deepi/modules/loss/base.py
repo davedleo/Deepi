@@ -25,7 +25,7 @@ class Loss(Module):
         self.prev: Optional[Module] = None
 
     @abstractmethod
-    def transform(self, y_hat: np.ndarray, y: np.ndarray) -> np.ndarray:
+    def forward(self, y_hat: np.ndarray, y: np.ndarray) -> np.ndarray:
         """Compute element-wise loss."""
         pass
 
@@ -46,8 +46,8 @@ class Loss(Module):
         else:
             return loss.mean()
 
-    def forward(self, y_hat: np.ndarray, y: np.ndarray) -> np.ndarray:
-        loss = self.transform(y_hat, y)
+    def __call__(self, y_hat: np.ndarray, y: np.ndarray) -> np.ndarray:
+        loss = self.forward(y_hat, y)
         loss = self.apply_reduction(loss)
 
         if self._is_training:

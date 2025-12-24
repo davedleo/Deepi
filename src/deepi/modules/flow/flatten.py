@@ -7,7 +7,7 @@ class Flatten(Flow):
     def __init__(self): 
         super().__init__("flatten")
 
-    def transform(self, x: np.ndarray) -> np.ndarray: 
+    def forward(self, x: np.ndarray) -> np.ndarray: 
         return x.reshape(x.shape[0], -1)
     
     def gradients(self, dy: np.ndarray) -> np.ndarray:

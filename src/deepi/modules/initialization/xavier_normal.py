@@ -15,7 +15,7 @@ class XavierNormal(Initializer):
         super().__init__("xavier_normal")
         self.gain = gain
 
-    def rule(self, shape: Tuple[int, ...]) -> np.ndarray: 
+    def init(self, shape: Tuple[int, ...]) -> np.ndarray: 
         fan_in = self.fan_in(shape)
         fan_out = self.fan_out(shape)
         std = self.gain * sqrt(2.0 / (fan_in + fan_out))

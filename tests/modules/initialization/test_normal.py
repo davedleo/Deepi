@@ -15,7 +15,7 @@ class DummyParam(Module):
     def get_params(self):
         return self.params
 
-    def transform(self, params):
+    def forward(self, params):
         self.params = params
 
     def gradients(self):
@@ -27,7 +27,7 @@ def test_normal_rule_returns_correct_shape_and_range():
     std = 1.0
     normal_init = Normal(mean=mean, std=std)
     shape = (1000, 1000)
-    result = normal_init.rule(shape)
+    result = normal_init.init(shape)
     assert isinstance(result, np.ndarray)
     assert result.shape == shape
     assert abs(result.mean() - mean) < 0.01
@@ -37,7 +37,7 @@ def test_normal_rule_returns_correct_shape_and_range():
 def test_normal_init_replaces_shapes_with_arrays():
     normal_init = Normal(mean=0.0, std=1.0)
     dummy = DummyParam((3, 3))
-    normal_init.init(dummy)
+    normal_init(dummy)
     for param in dummy.get_params().values():
         assert isinstance(param, np.ndarray)
         assert param.shape == dummy.shape

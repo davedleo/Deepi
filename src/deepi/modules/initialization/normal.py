@@ -14,5 +14,5 @@ class Normal(Initializer):
         self.mean = mean 
         self.std = std 
 
-    def rule(self, shape: Tuple[int, ...]) -> np.ndarray: 
+    def init(self, shape: Tuple[int, ...]) -> np.ndarray: 
         return np.random.normal(self.mean, self.std, shape)

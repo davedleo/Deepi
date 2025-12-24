@@ -7,7 +7,7 @@ class MAE(Loss):
     def __init__(self, reduction: Optional[str] = "mean"): 
         super().__init__("rmse", reduction)
 
-    def transform(self, y_hat: np.ndarray, y: np.ndarray) -> np.ndarray: 
+    def forward(self, y_hat: np.ndarray, y: np.ndarray) -> np.ndarray: 
         return (np.abs(y_hat - y)).mean(1)
     
     def gradients(self, y_hat: np.ndarray, y: np.ndarray) -> np.ndarray:

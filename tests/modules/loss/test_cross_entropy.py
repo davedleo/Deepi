@@ -28,7 +28,7 @@ def test_forward_large_batch(weights):
         sample_weights = weights_array[np.searchsorted(labels_list, y)]
         expected = (-sample_weights * np.log(probs[np.arange(len(y)), y])).mean()
 
-    loss = loss_fn.forward(y_hat, y)
+    loss = loss_fn(y_hat, y)
     assert np.allclose(loss, expected), "Forward output mismatch on large batch"
 
 @pytest.mark.parametrize("weights", [None, {0: 1.0, 1: 2.0, 2: 1.5}])
@@ -44,7 +44,7 @@ def test_backward_large_batch(weights):
     ])
     y = np.array([0, 1, 2, 1])
 
-    loss_fn.forward(y_hat, y)
+    loss_fn(y_hat, y)
     grad = loss_fn.backward()
 
     shifted = y_hat - np.max(y_hat, axis=1, keepdims=True)
@@ -80,7 +80,7 @@ def test_forward_multiple_classes_consistency():
     probs = exp_scores / np.sum(exp_scores, axis=1, keepdims=True)
     expected = -np.log(probs[np.arange(len(y)), y]).mean()
 
-    loss = loss_fn.forward(y_hat, y)
+    loss = loss_fn(y_hat, y)
     assert np.allclose(loss, expected), "Forward mismatch with multiple classes"
 
 def test_backward_multiple_classes_consistency():
@@ -93,7 +93,7 @@ def test_backward_multiple_classes_consistency():
     ])
     y = np.array([2, 3])
 
-    loss_fn.forward(y_hat, y)
+    loss_fn(y_hat, y)
     grad = loss_fn.backward()
 
     shifted = y_hat - np.max(y_hat, axis=1, keepdims=True)
@@ -114,6 +114,6 @@ def test_forward_eval_mode_no_cache_large_batch():
     y_hat = np.array([[1.0, 2.0, 3.0], [0.5, 2.0, 1.5]])
     y = np.array([2, 1])
 
-    loss = loss_fn.forward(y_hat, y)
+    loss = loss_fn(y_hat, y)
     assert loss_fn.x is None
     assert loss_fn.y is None

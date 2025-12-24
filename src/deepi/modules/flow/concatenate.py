@@ -9,7 +9,7 @@ class Concatenate(Flow):
         super().__init__("concatenate")
         self.axis = axis
 
-    def transform(self, xs: Tuple[np.ndarray, ...]) -> np.ndarray: 
+    def forward(self, xs: Tuple[np.ndarray, ...]) -> np.ndarray: 
         return np.concatenate(xs, axis=self.axis)
     
     def gradients(self, dy: np.ndarray) -> Tuple[np.ndarray, ...]:

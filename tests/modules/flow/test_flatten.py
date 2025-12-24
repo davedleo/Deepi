@@ -9,7 +9,7 @@ from deepi.modules.flow.flatten import Flatten
 def test_forward_flatten_exact():
     m = Flatten()
     x = np.array([[[1., 2.], [3., 4.]]])  # (1,2,2)
-    y = m.forward(x)
+    y = m(x)
     expected = np.array([[1., 2., 3., 4.]])
     assert np.allclose(y, expected), "Forward flatten result mismatch"
 
@@ -19,7 +19,7 @@ def test_backward_exact():
     m.train()
 
     x = np.random.randn(2, 3, 4)  # (batch=2)
-    y = m.forward(x)
+    y = m(x)
 
     dy = np.random.randn(2, 12)
     dx = m.gradients(dy)
@@ -36,7 +36,7 @@ def test_backward_accumulation():
     m.train()
 
     x = np.zeros((4, 3, 2))  # (batch=4)
-    m.forward(x)
+    m(x)
 
     dy1 = np.ones((4, 6))
     dy2 = np.full((4, 6), 2.0)
@@ -59,7 +59,7 @@ def test_eval_mode_no_cache():
     m = Flatten()
     m.eval()
     x = np.random.randn(2, 5, 6)
-    y = m.forward(x)
+    y = m(x)
 
     assert m.x is None and m.y is None, "Cache should not store values in eval mode"
 
@@ -68,7 +68,7 @@ def test_train_mode_cache():
     m = Flatten()
     m.train()
     x = np.random.randn(3, 4, 2)
-    y = m.forward(x)
+    y = m(x)
 
     assert np.allclose(m.x, x)
     assert np.allclose(m.y, y), "Training cache values incorrect"
@@ -79,7 +79,7 @@ def test_clear_resets():
     m.train()
 
     x = np.random.randn(2, 2, 3)
-    m.forward(x)
+    m(x)
 
     dy = np.random.randn(2, 6)
     m.backward(dy)

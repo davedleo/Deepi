@@ -8,7 +8,7 @@ class SELU(Activation):
         self.scale = 1.0507009873554804934193349852946
         self.alpha = 1.6732632423543772848170429916717
 
-    def transform(self, x: np.ndarray) -> np.ndarray:
+    def forward(self, x: np.ndarray) -> np.ndarray:
         mask = x > 0.0
         return mask * (self.scale * x) + (~mask) * (self.scale * self.alpha * np.expm1(x))
 

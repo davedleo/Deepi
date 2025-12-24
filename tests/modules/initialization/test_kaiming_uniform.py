@@ -15,7 +15,7 @@ class DummyParam(Module):
     def get_params(self):
         return self.params
 
-    def transform(self, params):
+    def forward(self, params):
         self.params = params
 
     def gradients(self):
@@ -26,7 +26,7 @@ def test_kaiming_uniform_rule_returns_correct_shape_and_range():
     gain = 1.0
     ku = KaimingUniform(gain=gain)
     shape = (1000, 1000)
-    result = ku.rule(shape)
+    result = ku.init(shape)
     assert isinstance(result, np.ndarray)
     assert result.shape == shape
 
@@ -44,7 +44,7 @@ def test_kaiming_uniform_rule_returns_correct_shape_and_range():
 def test_kaiming_uniform_init_replaces_shapes_with_arrays():
     ku = KaimingUniform()
     dummy = DummyParam((3, 3))
-    ku.init(dummy)
+    ku(dummy)
     for param in dummy.get_params().values():
         assert isinstance(param, np.ndarray)
         assert param.shape == dummy.shape

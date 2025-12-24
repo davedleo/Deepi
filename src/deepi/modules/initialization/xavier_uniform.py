@@ -15,7 +15,7 @@ class XavierUniform(Initializer):
         super().__init__("xavier_uniform")
         self.gain = gain
 
-    def rule(self, shape: Tuple[int, ...]) -> np.ndarray: 
+    def init(self, shape: Tuple[int, ...]) -> np.ndarray: 
         fan_in = self.fan_in(shape)
         fan_out = self.fan_out(shape)
         r = self.gain * sqrt(6.0 / (fan_in + fan_out))

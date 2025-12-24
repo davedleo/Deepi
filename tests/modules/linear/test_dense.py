@@ -16,7 +16,7 @@ def test_forward_no_bias():
     m = make_dense(input_size=3, output_size=2, bias=False)
     x = np.array([[1.0, 2.0, 3.0]])
     m.x = x
-    y = m.transform(x)
+    y = m.forward(x)
     expected = x @ m.params["w"]
     np.testing.assert_array_equal(y, expected)
 
@@ -24,7 +24,7 @@ def test_forward_with_bias():
     m = make_dense(input_size=3, output_size=2, bias=True)
     x = np.array([[1.0, 2.0, 3.0]])
     m.x = x
-    y = m.transform(x)
+    y = m.forward(x)
     expected = x @ m.params["w"] + m.params["b"]
     np.testing.assert_array_equal(y, expected)
 

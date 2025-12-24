@@ -1,7 +1,11 @@
 from .model import Model
+from . import model
 from . import modules
+from . import optimization
 
 __all__ = [
     "Model",
-    "modules"
+    "model",
+    "modules",
+    "optimization"
 ]

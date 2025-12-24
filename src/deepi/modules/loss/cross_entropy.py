@@ -20,7 +20,7 @@ class CrossEntropy(Loss):
             self.weights = np.array(weights_list, dtype=np.float64)
             self.weights /= self.weights.sum()
 
-    def transform(self, y_hat: np.ndarray, y: np.ndarray) -> np.ndarray:
+    def forward(self, y_hat: np.ndarray, y: np.ndarray) -> np.ndarray:
         n_samples = y_hat.shape[0]
         shifted = y_hat - y_hat.max(axis=1, keepdims=True)
         exp_sum = np.exp(shifted).sum(axis=1)

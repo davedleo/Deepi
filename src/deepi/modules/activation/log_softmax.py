@@ -7,7 +7,7 @@ class LogSoftmax(Activation):
         super().__init__("logsoftmax")
         self.axis = axis
 
-    def transform(self, x: np.ndarray) -> np.ndarray:
+    def forward(self, x: np.ndarray) -> np.ndarray:
         x_max = np.max(x, axis=self.axis, keepdims=True)
         shifted = x - x_max
         exp_shifted = np.exp(shifted)

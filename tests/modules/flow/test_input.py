@@ -17,14 +17,14 @@ def test_generate_sample_shape():
 def test_forward_returns_input():
     m = Input((2, 2))
     x = np.random.randn(1, 2, 2)
-    y = m.forward(x)
+    y = m(x)
     assert np.allclose(y, x), "Forward should return input as is"
 
 def test_gradients_returns_none():
     m = Input((2, 2))
     m.train()
     x = np.zeros((1, 2, 2))
-    m.forward(x)
+    m(x)
     dy = np.ones((1, 2, 2))
     grad = m.gradients(dy)
     assert grad is None, "Input layer gradients should return None"
@@ -43,14 +43,14 @@ def test_eval_mode_no_cache():
     m = Input((2, 2))
     m.eval()
     x = np.random.randn(1, 2, 2)
-    y = m.forward(x)
+    y = m(x)
     assert m.x is None and m.y is None, "Input layer should not cache values in eval mode"
 
 def test_train_mode_cache_behavior():
     m = Input((2, 2))
     m.train()
     x = np.random.randn(1, 2, 2)
-    y = m.forward(x)
+    y = m(x)
     # Input layer does not override Flow caching, so it may store x/y
     # Depending on base Flow implementation, test if caching occurs
     assert m.x is None or np.allclose(m.x, x)  # permissive check
@@ -60,7 +60,7 @@ def test_clear_resets():
     m = Input((2, 2))
     m.train()
     x = np.random.randn(1, 2, 2)
-    m.forward(x)
+    m(x)
     m.clear()
     assert m.x is None
     assert m.y is None

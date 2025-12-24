@@ -10,7 +10,7 @@ class DummyFlow(Flow):
     def __init__(self):
         super().__init__("dummy")
 
-    def transform(self, x: np.ndarray) -> np.ndarray:
+    def forward(self, x: np.ndarray) -> np.ndarray:
         # flatten only, no scaling
         return x.reshape(x.shape[0], -1)
 
@@ -26,7 +26,7 @@ def test_forward_without_training():
     """Forward should NOT cache x,y if not in training mode"""
     m = DummyFlow()
     x = np.array([[1., 2., 3.]])
-    y = m.forward(x)
+    y = m(x)
 
     # flatten should not change shape because already 2-D
     assert np.allclose(y, x.reshape(1, 3))
@@ -39,7 +39,7 @@ def test_forward_with_training_caching():
     m = DummyFlow()
     m.train()
     x = np.array([[1., 3.]])
-    y = m.forward(x)
+    y = m(x)
     assert np.allclose(y, x.reshape(1, 2))
 
     # now caching should be active
@@ -53,7 +53,7 @@ def test_backward_accumulation():
     m.train()
 
     # set input shape so backward can reshape
-    m.forward(np.zeros((1, 3)))
+    m(np.zeros((1, 3)))
 
     dy1 = np.array([[1., 2., 3.]])
     dy2 = np.array([[2., 3., 4.]])
@@ -80,7 +80,7 @@ def test_clear_resets():
     m = DummyFlow()
     m.train()
     x = np.array([[1., 2.]])
-    m.forward(x)
+    m(x)
     m.backward(np.array([[3., 4.]]))
 
     assert m.x is not None
