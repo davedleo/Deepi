@@ -13,7 +13,6 @@ class OneCycle(Scheduler):
         final_div_factor: float = 1e4,
     ):
         super().__init__(optimizer, "one_cycle")
-        self.base_lr = self.lr
         self.max_lr = max_lr
         self.total_steps = total_steps
         self.pct_start = pct_start
@@ -23,9 +22,9 @@ class OneCycle(Scheduler):
     def update(self) -> float:
         step = min(self.t, self.total_steps)
         if step <= self.warmup_steps:
-            lr = self.base_lr + (self.max_lr - self.base_lr) * step / self.warmup_steps
+            lr = self.lr + (self.max_lr - self.lr) * step / self.warmup_steps
         else:
             decay_steps = self.total_steps - self.warmup_steps
-            final_lr = self.base_lr / self.final_div_factor
+            final_lr = self.lr / self.final_div_factor
             lr = self.max_lr - (self.max_lr - final_lr) * (step - self.warmup_steps) / decay_steps
         return lr

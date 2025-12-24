@@ -57,7 +57,7 @@ def test_one_cycle_initialization():
 
     assert sched.optimizer is opt
     assert sched._type == "scheduler.one_cycle"
-    assert sched.base_lr == 0.1
+    assert sched.lr == 0.1
     assert sched.max_lr == 1.0
     assert sched.total_steps == 10
     assert sched.pct_start == 0.3
@@ -67,7 +67,7 @@ def test_one_cycle_initialization():
 
 
 def test_one_cycle_first_step():
-    """First step should increase LR from base_lr"""
+    """First step should increase LR from lr"""
     model = build_test_model()
     model.train()
 
@@ -130,7 +130,7 @@ def test_one_cycle_decay_phase():
 
 
 def test_one_cycle_final_step():
-    """Final LR should be base_lr / final_div_factor"""
+    """Final LR should be lr / final_div_factor"""
     model = build_test_model()
     model.train()
 
