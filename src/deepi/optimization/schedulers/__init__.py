@@ -4,7 +4,7 @@ from .base import Scheduler
 # from .cyclic import Cyclic
 # from .exponential import Exponential 
 # from .linear import Linear 
-# from .multi_step import MultiStep 
+from .multi_step import MultiStep 
 from .multiplicative import Multiplicative
 # from .one_cycle import OneCycle  
 # from .polynomial import Polynomial
@@ -17,8 +17,8 @@ __all__ = [
     # "Cyclic",
     # "Exponential",
     # "Linear",
-    # "MultiStep",
-    "Multiplicative"
+    "MultiStep",
+    "Multiplicative",
     # "OneCycle",
     # "Polynomial",
     "Step"
