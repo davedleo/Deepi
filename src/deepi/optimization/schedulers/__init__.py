@@ -1,6 +1,6 @@
 from .base import Scheduler 
-# from .constant import Constant
-# from .cosine_annealing import CosineAnnealing  
+from .constant import Constant
+from .cosine_annealing import CosineAnnealing  
 # from .cyclic import Cyclic
 from .exponential import Exponential 
 from .linear import Linear 
@@ -12,8 +12,8 @@ from .step import Step
 
 __all__ = [
     "Scheduler",
-    # "Constant",
-    # "CosineAnnealing",
+    "Constant",
+    "CosineAnnealing",
     # "Cyclic",
     "Exponential",
     "Linear",
