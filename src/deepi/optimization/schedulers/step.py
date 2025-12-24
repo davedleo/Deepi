@@ -7,8 +7,8 @@ class Step(Scheduler):
     def __init__(
             self, 
             optimizer: Optimizer, 
-            factor: 0.33, 
-            step_size: 5
+            factor: float = 0.33, 
+            step_size: int = 5
     ): 
         super().__init__(optimizer, "step")
         self.factor = factor 

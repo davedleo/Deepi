@@ -7,8 +7,8 @@ class Constant(Scheduler):
     def __init__(
             self, 
             optimizer: Optimizer, 
-            factor: 0.33, 
-            milestone: 5
+            factor: float = 0.33, 
+            milestone: int = 5
     ): 
         super().__init__(optimizer, "constant")
         self.factor = factor 

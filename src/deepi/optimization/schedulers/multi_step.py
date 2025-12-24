@@ -1,4 +1,4 @@
-from typing import List, Dict 
+from typing import List
 
 from deepi.optimization.optimizers import Optimizer 
 from deepi.optimization.schedulers import Scheduler 
@@ -7,19 +7,10 @@ from deepi.optimization.schedulers import Scheduler
 class MultiStep(Scheduler): 
 
     def __init__(
-            self, 
-            optimizer: Optimizer, 
-            factors: float | List[float] = 0.33, 
-            milestones: int | List[int] = 5,
-    ): 
-        super().__init__(optimizer, "multi_step")
-class MultiStep(Scheduler): 
-
-    def __init__(
         self, 
         optimizer: Optimizer, 
-        factors: float | list[float] = 0.33, 
-        milestones: int | list[int] = 5,
+        factors: float | List[float] = 0.33, 
+        milestones: int | List[int] = 5,
     ): 
         super().__init__(optimizer, "multi_step")
 

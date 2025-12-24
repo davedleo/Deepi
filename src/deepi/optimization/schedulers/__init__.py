@@ -3,7 +3,7 @@ from .base import Scheduler
 # from .cosine_annealing import CosineAnnealing  
 # from .cyclic import Cyclic
 # from .exponential import Exponential 
-# from .linear import Linear 
+from .linear import Linear 
 from .multi_step import MultiStep 
 from .multiplicative import Multiplicative
 # from .one_cycle import OneCycle  
@@ -16,7 +16,7 @@ __all__ = [
     # "CosineAnnealing",
     # "Cyclic",
     # "Exponential",
-    # "Linear",
+    "Linear",
     "MultiStep",
     "Multiplicative",
     # "OneCycle",
