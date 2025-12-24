@@ -7,7 +7,7 @@ from .exponential import Exponential
 from .linear import Linear 
 from .multi_step import MultiStep 
 from .multiplicative import Multiplicative
-# from .one_cycle import OneCycle  
+from .one_cycle import OneCycle  
 from .plateau import Plateau
 from .polynomial import Polynomial
 from .step import Step
@@ -22,7 +22,7 @@ __all__ = [
     "Linear",
     "MultiStep",
     "Multiplicative",
-    # "OneCycle",
+    "OneCycle",
     "Polynomial",
     "Plateau",
     "Step"
