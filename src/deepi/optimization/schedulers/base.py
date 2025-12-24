@@ -12,12 +12,14 @@ class Scheduler(ABC):
         self.optimizer = optimizer 
         self._type = f"scheduler.{_type}"
         self.lr = self.optimizer.get_lr()
+        self.t = 0
 
     @abstractmethod
     def update(self) -> float: 
         pass
 
     def step(self): 
+        self.t += 1
         lr = self.update()
         self.optimizer.load_lr(lr)
 

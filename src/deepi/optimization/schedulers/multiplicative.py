@@ -13,10 +13,8 @@ class Multiplicative(Scheduler):
     ): 
         super().__init__(optimizer, "multiplicative")
         self.lmbd = lmbd 
-        self.t = 0
 
     def update(self): 
-        self.t += 1 
         factor = self.lmbd(self.t)
         lr = self.optimizer.get_lr()
         return factor * lr

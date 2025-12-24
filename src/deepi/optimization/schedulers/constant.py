@@ -13,8 +13,6 @@ class Constant(Scheduler):
         super().__init__(optimizer, "constant")
         self.factor = factor 
         self.milestone = milestone 
-        self.t = 0 
 
     def update(self): 
-        self.t += 1 
         return self.factor * self.lr if self.t < self.milestone else self.lr
