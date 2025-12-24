@@ -91,3 +91,14 @@ class Optimizer(ABC):
     
     def load_lr(self, lr: float): 
         self.lr = lr
+
+    @property
+    def type(self) -> str:
+        return self._type
+
+    def __str__(self) -> str:
+        parts = self._type.split(".")
+        return ".".join([part.capitalize() for part in parts])
+
+    def __repr__(self) -> str:
+        return self.__str__()

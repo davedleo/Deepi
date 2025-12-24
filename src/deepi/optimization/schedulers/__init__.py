@@ -1,4 +1,4 @@
-# from .base import Scheduler 
+from .base import Scheduler 
 # from .constant import Constant
 # from .cosine_annealing import CosineAnnealing  
 # from .cyclic import Cyclic
@@ -11,7 +11,7 @@
 # from .step import Step
 
 __all__ = [
-    # "Scheduler",
+    "Scheduler",
     # "Constant",
     # "CosineAnnealing",
     # "Cyclic",

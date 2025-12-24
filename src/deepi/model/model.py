@@ -232,3 +232,13 @@ class Model:
     @property
     def type(self) -> str:
         return self._type
+    
+    @property
+    def type(self) -> str:
+        return self._type
+
+    def __str__(self) -> str:
+        return self._type.capitalize()
+
+    def __repr__(self) -> str:
+        return self.__str__()
