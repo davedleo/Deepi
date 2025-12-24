@@ -14,5 +14,5 @@ class Constant(Scheduler):
         self.factor = factor 
         self.milestone = milestone 
 
-    def update(self): 
+    def update(self) -> float: 
         return self.factor * self.lr if self.t < self.milestone else self.lr

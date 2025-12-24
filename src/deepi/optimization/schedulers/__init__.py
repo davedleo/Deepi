@@ -8,7 +8,7 @@ from .base import Scheduler
 from .multiplicative import Multiplicative
 # from .one_cycle import OneCycle  
 # from .polynomial import Polynomial
-# from .step import Step
+from .step import Step
 
 __all__ = [
     "Scheduler",
@@ -21,5 +21,5 @@ __all__ = [
     "Multiplicative"
     # "OneCycle",
     # "Polynomial",
-    # "Step"
+    "Step"
 ]
